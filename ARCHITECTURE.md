@@ -1,6 +1,6 @@
 # Architecture & Developer Guide — Advancement Progress Mod
 
-> **Target Platform:** Minecraft **1.21.4** (Fabric Loader `>=0.16.10`, Loom `1.9.2`, Java **21**)  
+> **Target Platform:** Minecraft **>=1.21.2 <=1.21.11** (Fabric Loader `>=0.16.10`, Loom `1.9.2`, Java **21**)  
 > **Mod ID:** `advancement-progress`  
 > **Environment:** **Client-Only** (zero custom network packets; 100% compatible with pure vanilla servers, Realms, Paper/Spigot, and modded Fabric servers)
 
