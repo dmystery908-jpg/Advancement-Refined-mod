@@ -56,8 +56,10 @@ public abstract class AdvancementsScreenMixin extends Screen {
     @Shadow @Final private ClientAdvancements advancements;
     @Shadow @Final private Map<AdvancementHolder, AdvancementTab> tabs;
     @Shadow @Nullable private AdvancementTab selectedTab;
-    @Shadow private int leftPos;
-    @Shadow private int topPos;
+    @Unique
+    private int leftPos;
+    @Unique
+    private int topPos;
 
     @Unique
     private final InspectorPanel advancementProgress$inspector = new InspectorPanel();
