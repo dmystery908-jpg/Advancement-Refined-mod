@@ -2,6 +2,7 @@
 	"required": true,
 	"package": "com.dmystery.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"refmap": "advancements-refined-refmap.json",
 	"mixins": [],
 	"client": [
 		"AdvancementsScreenAccessor",
