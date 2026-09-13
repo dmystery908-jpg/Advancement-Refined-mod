@@ -1,0 +1,23 @@
+{
+	"required": true,
+	"package": "com.dmystery.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [],
+	"client": [
+		"AdvancementsScreenAccessor",
+		"AdvancementsScreenMixin",
+		"AdvancementTabAccessor",
+		"AdvancementTabMixin",
+		"AdvancementTabTypeMixin",
+		"AdvancementWidgetAccessor",
+		"AdvancementWidgetMixin",
+		"ClientAdvancementsAccessor",
+		"ClientAdvancementsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
