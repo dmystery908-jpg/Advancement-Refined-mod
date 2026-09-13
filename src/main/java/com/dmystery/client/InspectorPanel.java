@@ -172,7 +172,7 @@ public class InspectorPanel {
         String pctStr = String.format(java.util.Locale.ROOT, "%.0f%%", pct * 100.0f);
         Component progressLabel = Component.literal(completedCount + " / " + totalCount + " (" + pctStr + ")");
         if (display != null && display.isHidden()) {
-            progressLabel = progressLabel.copy().append(Component.literal(" ")).append(Component.translatable("advancement_progress.hidden_advancement"));
+            progressLabel = progressLabel.copy().append(Component.literal(" ")).append(Component.translatable("advancements_refined.hidden_advancement"));
         }
         graphics.drawString(font, progressLabel, textX, y + 16, 0xFFAAAAAA, true);
 
@@ -192,10 +192,10 @@ public class InspectorPanel {
 
         if (pinHovered) {
             Component pinTip = isPinned
-                ? Component.translatable("advancement_progress.pin.unpin_tooltip")
+                ? Component.translatable("advancements_refined.pin.unpin_tooltip")
                 : (HudPinManager.getPinnedCount() >= HudPinManager.getMaxPinned()
-                    ? Component.translatable("advancement_progress.pin.max_reached", HudPinManager.getMaxPinned())
-                    : Component.translatable("advancement_progress.pin.pin_tooltip"));
+                    ? Component.translatable("advancements_refined.pin.max_reached", HudPinManager.getMaxPinned())
+                    : Component.translatable("advancements_refined.pin.pin_tooltip"));
             graphics.renderTooltip(font, pinTip, mouseX, mouseY);
         }
 
@@ -224,7 +224,7 @@ public class InspectorPanel {
 
         String checkMark = hideCompleted ? "✔ " : "   ";
         Component filterText = Component.literal(checkMark).append(
-            Component.translatable("advancement_progress.inspector.hide_completed")
+            Component.translatable("advancements_refined.inspector.hide_completed")
         );
         graphics.drawCenteredString(font, filterText, filterBtnX + filterBtnW / 2, filterBtnY + 3, hideCompleted ? 0xFF55FF55 : 0xFFCCCCCC);
 

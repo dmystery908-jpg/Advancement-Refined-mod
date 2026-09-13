@@ -97,7 +97,7 @@ public class AdvancementCache {
         tabStats = newTabStats;
 
         String percentFormatted = String.format(java.util.Locale.ROOT, "%.1f", totalPercent * 100.0f);
-        cachedTotalText = Component.translatable("advancement_progress.total", totalCompleted, totalCount, percentFormatted);
+        cachedTotalText = Component.translatable("advancements_refined.total", totalCompleted, totalCount, percentFormatted);
     }
 
     public static int getTotalCompleted() {

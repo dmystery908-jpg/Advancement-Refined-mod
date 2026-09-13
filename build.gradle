@@ -23,7 +23,7 @@ dependencies {
 }
 
 loom {
-	accessWidenerPath = file("src/main/resources/advancement-progress.accesswidener")
+	accessWidenerPath = file("src/main/resources/advancements-refined.accesswidener")
 }
 
 processResources {

@@ -21,7 +21,7 @@ public class AdvancementProgressConfigScreen extends Screen {
     private final AdvancementProgressConfig config;
 
     public AdvancementProgressConfigScreen(Screen parent) {
-        super(Component.translatable("advancement_progress.config.title"));
+        super(Component.translatable("advancements_refined.config.title"));
         this.parent = parent;
         this.config = AdvancementProgressConfig.getInstance();
     }
@@ -41,33 +41,33 @@ public class AdvancementProgressConfigScreen extends Screen {
         // Row 1: Global Bar | Tab Badges
         addRenderableWidget(
             CycleButton.onOffBuilder(config.showGlobalBar)
-                .create(leftX, startY, colW, 20, Component.translatable("advancement_progress.config.show_global_bar"), (btn, val) -> config.showGlobalBar = val)
+                .create(leftX, startY, colW, 20, Component.translatable("advancements_refined.config.show_global_bar"), (btn, val) -> config.showGlobalBar = val)
         );
         addRenderableWidget(
             CycleButton.onOffBuilder(config.showTabBadges)
-                .create(rightX, startY, colW, 20, Component.translatable("advancement_progress.config.show_tab_badges"), (btn, val) -> config.showTabBadges = val)
+                .create(rightX, startY, colW, 20, Component.translatable("advancements_refined.config.show_tab_badges"), (btn, val) -> config.showTabBadges = val)
         );
 
         // Row 2: Tooltip Hints | Auto Unpin
         addRenderableWidget(
             CycleButton.onOffBuilder(config.showTooltipHints)
-                .create(leftX, startY + rowSpacing, colW, 20, Component.translatable("advancement_progress.config.show_tooltip_hints"), (btn, val) -> config.showTooltipHints = val)
+                .create(leftX, startY + rowSpacing, colW, 20, Component.translatable("advancements_refined.config.show_tooltip_hints"), (btn, val) -> config.showTooltipHints = val)
         );
         addRenderableWidget(
             CycleButton.onOffBuilder(config.autoUnpinOnComplete)
-                .create(rightX, startY + rowSpacing, colW, 20, Component.translatable("advancement_progress.config.auto_unpin"), (btn, val) -> config.autoUnpinOnComplete = val)
+                .create(rightX, startY + rowSpacing, colW, 20, Component.translatable("advancements_refined.config.auto_unpin"), (btn, val) -> config.autoUnpinOnComplete = val)
         );
 
         // Row 3: HUD Enabled | HUD Position
         addRenderableWidget(
             CycleButton.onOffBuilder(config.hudEnabled)
-                .create(leftX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancement_progress.config.hud_enabled"), (btn, val) -> config.hudEnabled = val)
+                .create(leftX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancements_refined.config.hud_enabled"), (btn, val) -> config.hudEnabled = val)
         );
         addRenderableWidget(
             CycleButton.builder(AdvancementProgressConfig.HudPosition::getDisplayName)
                 .withValues(AdvancementProgressConfig.HudPosition.values())
                 .withInitialValue(config.hudPosition)
-                .create(rightX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancement_progress.config.hud_position"), (btn, val) -> config.hudPosition = val)
+                .create(rightX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancements_refined.config.hud_position"), (btn, val) -> config.hudPosition = val)
         );
 
         // Row 4: Max Pins | Tree Zoom
@@ -75,7 +75,7 @@ public class AdvancementProgressConfigScreen extends Screen {
             CycleButton.builder((Integer v) -> Component.literal(String.valueOf(v)))
                 .withValues(1, 2, 3, 4, 5)
                 .withInitialValue(config.maxPins)
-                .create(leftX, startY + rowSpacing * 3, colW, 20, Component.translatable("advancement_progress.config.max_pins"), (btn, val) -> config.maxPins = val)
+                .create(leftX, startY + rowSpacing * 3, colW, 20, Component.translatable("advancements_refined.config.max_pins"), (btn, val) -> config.maxPins = val)
         );
         addRenderableWidget(
             new AbstractSliderButton(rightX, startY + rowSpacing * 3, colW, 20, Component.empty(), (config.treeZoom - 0.5f) / 0.5f) {
@@ -85,7 +85,7 @@ public class AdvancementProgressConfigScreen extends Screen {
 
                 @Override
                 protected void updateMessage() {
-                    setMessage(Component.translatable("advancement_progress.config.tree_zoom", String.format(Locale.ROOT, "%.0f%%", config.treeZoom * 100.0f)));
+                    setMessage(Component.translatable("advancements_refined.config.tree_zoom", String.format(Locale.ROOT, "%.0f%%", config.treeZoom * 100.0f)));
                 }
 
                 @Override
@@ -98,7 +98,7 @@ public class AdvancementProgressConfigScreen extends Screen {
         // Footer: Reset | Done
         int bottomY = Math.max(startY + rowSpacing * 4 + 16, this.height - 30);
         addRenderableWidget(
-            Button.builder(Component.translatable("advancement_progress.config.reset"), btn -> {
+            Button.builder(Component.translatable("advancements_refined.config.reset"), btn -> {
                 config.resetDefaults();
                 rebuildWidgets();
             }).bounds(leftX, bottomY, colW, 20).build()

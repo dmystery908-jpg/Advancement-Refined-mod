@@ -1,14 +1,14 @@
-# Architecture & Developer Guide — Advancement Progress Mod
+# Architecture & Developer Guide — Advancements Refined
 
 > **Target Platform:** Minecraft **>=1.21.2 <=1.21.11** (Fabric Loader `>=0.16.10`, Loom `1.9.2`, Java **21**)  
-> **Mod ID:** `advancement-progress`  
+> **Mod ID:** `advancements-refined`  
 > **Environment:** **Client-Only** (zero custom network packets; 100% compatible with pure vanilla servers, Realms, Paper/Spigot, and modded Fabric servers)
 
 ---
 
 ## 1. Executive Summary
 
-`Advancement Progress` is a client-side quality-of-life mod designed to dramatically improve the Minecraft advancement tracking experience. It solves major vanilla limitations:
+`Advancements Refined` is a client-side quality-of-life mod designed to dramatically improve the Minecraft advancement tracking experience. It solves major vanilla limitations:
 1. **Tiny viewport:** Vanilla advancements screen is rigidly clamped to a 252×140 window. This mod expands the canvas responsively across the entire screen and applies a clean **`0.65f` zoom-out factor** (inspired by *Better Advancements*), displaying 12–14 vertical rows simultaneously with smooth scrolling and centering.
 2. **Hidden advancement progress:** Vanilla provides no built-in way to see which specific criteria have been completed for composite achievements (e.g. *Monsters Hunted*, *Adventuring Time*, *A Balanced Diet*, *Two by Two*). The mod introduces an interactive **Criteria Inspector Panel** with item icons, entity heads, localized names, checkmarks, scrollable list, and a "Hide completed" filter.
 3. **In-game HUD Pinning:** Players can pin up to **3 advancements** directly to the top-right corner of their in-game HUD. Pins are saved **per-world** (singleplayer) or **per-server** (multiplayer) in JSON config.
@@ -22,7 +22,7 @@
 ## 2. Project Directory Structure
 
 ```
-advancement-progress/
+advancements-refined/
 ├── build.gradle                              # Fabric Loom 1.9.2 build script (Java 21)
 ├── gradle.properties                         # Dependencies: MC 1.21.4, Fabric Loader, Fabric API
 ├── ARCHITECTURE.md                           # This architecture documentation
@@ -36,7 +36,7 @@ advancement-progress/
 │       │           ├── client/
 │       │           │   ├── AdvancementCache.java        # In-memory stats cache & dirty flag logic
 │       │           │   ├── AdvancementDataLoader.java   # Offline/client data pack advancement discovery
-│       │           │   ├── AdvancementProgressConfig.java       # Singleton JSON config (config/advancement-progress.json)
+│       │           │   ├── AdvancementProgressConfig.java       # Singleton JSON config (config/advancements-refined.json)
 │       │           │   ├── AdvancementProgressConfigScreen.java # Vanilla settings GUI screen
 │       │           │   ├── AdvancementScreenLayout.java # Responsive screen bounds & zoom constants
 │       │           │   ├── AdvancementTabExtension.java # Interface exposing hovered widget on tabs
@@ -44,7 +44,8 @@ advancement-progress/
 │       │           │   ├── HudPinManager.java           # World-scoped pin persistence & config manager
 │       │           │   ├── InspectorPanel.java          # Interactive criteria inspector dialog UI
 │       │           │   ├── ModMenuIntegration.java      # Mod Menu API entrypoint (ConfigScreenFactory)
-│       │           │   └── PinnedAdvancementsHud.java   # In-game HUD element renderer (HudRenderCallback)
+│       │           │   ├── PinnedAdvancementsHud.java   # In-game HUD element renderer (HudRenderCallback)
+│       │           │   └── PinnedChip.java              # Top pinned chips data model
 │       │           └── mixin/
 │       │               ├── AdvancementsScreenMixin.java # Custom window frame, top bars, pin click handler
 │       │               ├── AdvancementsScreenAccessor.java  # Accessor for selectedTab and lastScreen
@@ -57,10 +58,10 @@ advancement-progress/
 │       │               └── ClientAdvancementsAccessor.java  # Accessor for progress map in ClientAdvancements
 │       └── resources/
 │           ├── fabric.mod.json                          # Mod metadata (client environment)
-│           ├── advancement-progress.mixins.json         # Mixin configuration (Java 21 compatibility)
-│           ├── advancement-progress.accesswidener       # Access widener for AdvancementTabType
+│           ├── advancements-refined.mixins.json         # Mixin configuration (Java 21 compatibility)
+│           ├── advancements-refined.accesswidener       # Access widener for AdvancementTabType
 │           └── assets/
-│               └── advancement-progress/
+│               └── advancements-refined/
 │                   ├── icon.png                         # Mod icon
 │                   └── lang/
 │                       ├── en_us.json                   # English localizations
@@ -120,8 +121,8 @@ advancement-progress/
 ```
 
 ### 3.1 com.dmystery
-- **`AdvancementProgress`**: Global constant holder (`MOD_ID = "advancement-progress"`), root logger, and `Identifier.fromNamespaceAndPath(MOD_ID, path)` helper.
-- **`AdvancementProgressClient`**: Entrypoint implementing `ClientModInitializer`. Registers `PinnedAdvancementsHud` into Fabric's HUD pipeline using `HudElementRegistry.addLast()`.
+- **`AdvancementProgress`**: Global constant holder (`MOD_ID = "advancements-refined"`), root logger, and `ResourceLocation.fromNamespaceAndPath(MOD_ID, path)` helper.
+- **`AdvancementProgressClient`**: Entrypoint implementing `ClientModInitializer`. Registers `PinnedAdvancementsHud` into Fabric's HUD pipeline using `HudRenderCallback.EVENT`.
 
 ### 3.2 com.dmystery.client
 - **`AdvancementCache`**:
@@ -137,7 +138,7 @@ advancement-progress/
   - Exposes `getInsideWidth() = windowWidth - 18` and `getInsideHeight() = windowHeight - 27`.
   - Defines the global tree zoom factor `zoom = 0.65f`.
 - **`AdvancementProgressConfig`**:
-  - Singleton configuration system serialized to `<minecraft_root>/config/advancement-progress.json` with pretty-printed GSON.
+  - Singleton configuration system serialized to `<minecraft_root>/config/advancements-refined.json` with pretty-printed GSON.
   - Controls: `showGlobalBar`, `showTabBadges`, `showTooltipHints`, `treeZoom` (0.5f - 1.0f), `hudEnabled`, `hudPosition` (TOP_RIGHT, TOP_LEFT, BOTTOM_RIGHT, BOTTOM_LEFT), `maxPins` (1 - 5), `autoUnpinOnComplete`.
 - **`AdvancementProgressConfigScreen`**:
   - In-game settings screen extending vanilla `Screen`, built without heavy external libraries (using `CycleButton`, `AbstractSliderButton`, and `Button`).
@@ -155,7 +156,7 @@ advancement-progress/
     - Singleplayer: `"local_" + worldPath.getFileName()` (unique folder name of save file).
     - Dedicated Server: `"server_" + serverIp.replace(':', '_')`.
     - Fallback: dimension key or `"default"`.
-  - Automatically loads and persists changes to `<minecraft_root>/config/advancement_progress_pins.json` using pretty-printed Gson.
+  - Automatically loads and persists changes to `<minecraft_root>/config/advancements_refined_pins.json` using pretty-printed Gson.
 - **`InspectorPanel`**:
   - A modal panel docked inside the right side of the expanded advancements window.
   - Opened via **Left-Click** on any composite advancement node (`requirements().size() > 1`).
@@ -220,8 +221,8 @@ advancement-progress/
 | **Criteria Inspector** | `★` Button | **LMB** | Toggles HUD Pin for currently inspected advancement |
 | **Criteria Inspector** | "Hide completed" Button | **LMB** | Filters out completed criteria |
 | **Criteria Inspector** | List Area | **Mouse Scroll** | Scrolls through criteria list |
-| **Advancements Screen** | `⚙` (Gear Button, 20×20 px) | **LMB** | Opens Advancement Progress Settings screen |
-| **Global / In-Game** | Open Settings Hotkey (`key.advancement_progress.open_settings`) | Custom Key (Default: Unassigned) | Instantly opens Advancement Progress Settings screen |
+| **Advancements Screen** | `⚙` (Gear Button, 20×20 px) | **LMB** | Opens Advancements Refined Settings screen |
+| **Global / In-Game** | Open Settings Hotkey (`key.advancements_refined.open_settings`) | Custom Key (Default: Unassigned) | Instantly opens Advancements Refined Settings screen |
 | **In-Game HUD** | Top-right Cards | Active Gameplay / Chat | Shows real-time progress / tasks for pinned achievements |
 
 ---
@@ -240,13 +241,11 @@ In SpongePowered Mixin, any interface annotated with `@Mixin` that declares an `
 - **Pitfall:** Adding `default boolean isPinned() { ... }` inside `AdvancementWidgetAccessor` causes Mixin to classify the target class as an interface, failing classloading with `InvalidMixinException`.
 - **Correct Solution:** Keep accessor interfaces 100% pure (only `@Accessor` methods). Place utility methods in companion classes like `HudPinManager`.
 
-### 5.3 Minecraft 26.2 Mojang Mappings Changes
-Minecraft 26.2 introduced several API adjustments from older versions:
-- **Resource identifiers:** Use `ResourceKey.identifier()` instead of legacy `.location()`.
-- **Action bar messages:** Use `player.sendOverlayMessage(Component)` instead of legacy `player.displayClientMessage(..., true)`.
-- **Matrix stacks:** `GuiGraphicsExtractor.pose()` returns JOML `Matrix3x2fStack` (2D affine transformations; `translate(float, float)`, `scale(float, float)`).
+### 5.3 Minecraft 1.21.4 Mojang Mappings Changes
+- **Action bar messages:** `player.displayClientMessage(Component, true)`.
+- **Matrix stacks:** `graphics.pose().pushPose()`, `translate(float, float, float)`, `scale(float, float, float)`.
 - **Singleplayer world directory:** Access via `MinecraftServer.getWorldPath(LevelResource.ROOT).getFileName().toString()`.
-- **HUD rendering pipeline:** Fabric uses `HudElementRegistry.addLast(Identifier, HudElement)` and `HudElement.extractRenderState(GuiGraphicsExtractor, DeltaTracker)`.
+- **HUD rendering pipeline:** Fabric uses `HudRenderCallback.EVENT.register(...)`.
 
 ### 5.4 Advancement Requirements: AND of OR Groups
 Minecraft advancement requirements are structured as `AdvancementRequirements` (a list of lists of strings: `List<List<String>>`):
@@ -258,7 +257,7 @@ Minecraft advancement requirements are structured as `AdvancementRequirements` (
   - In `PinnedAdvancementsHud` and `InspectorPanel`, always clamp `doneCount = Math.min(totalCriteria, doneCount)`.
 
 ### 5.5 Zoom Math & Tooltip Alignment
-When applying zoom scale (`scale = 0.65f`) via `graphics.pose().scale(scale, scale)`:
+When applying zoom scale (`scale = 0.65f`) via `graphics.pose().scale(scale, scale, 1.0f)`:
 - Canvas inside dimensions: `inW = AdvancementScreenLayout.getInsideWidth()`, `inH = AdvancementScreenLayout.getInsideHeight()`.
 - Effective virtual canvas size: `effectiveInW = inW / scale`, `effectiveInH = inH / scale`.
 - Mouse transformation for node hit-testing (`tick()` and `findWidgetAt()`):
@@ -267,15 +266,15 @@ When applying zoom scale (`scale = 0.65f`) via `graphics.pose().scale(scale, sca
   ```java
   int adjustedSX = (int) Math.round((sX + hovered.getX()) * scale) - hovered.getX();
   int adjustedSY = (int) Math.round((sY + hovered.getY()) * scale) - hovered.getY();
-  hovered.extractHover(graphics, adjustedSX, adjustedSY, fade, x, y);
+  hovered.drawHover(graphics, adjustedSX, adjustedSY, fade, x, y);
   ```
 
 ### 5.6 Clean Tooltip Hint Injection
-Do not render floating secondary tooltips (such as `graphics.setTooltipForNextFrame(hint, mouseX, mouseY + 15)`). Secondary tooltips collide with and obscure the main advancement description.
-- Instead, `AdvancementWidgetMixin` redirects the `description` field in `AdvancementWidget.extractHover` to append hint lines directly at the bottom of the native box.
+Do not render floating secondary tooltips (such as `graphics.renderTooltip(font, hint, mouseX, mouseY + 15)`). Secondary tooltips collide with and obscure the main advancement description.
+- Instead, `AdvancementWidgetMixin` redirects the `description` field in `AdvancementWidget.drawHover` to append hint lines directly at the bottom of the native box.
 
 ### 5.7 Screen Navigation & KeyMapping in Minecraft 1.21.4
-- **KeyMapping Categories:** In 1.21.4, `KeyBindingHelper.registerKeyBinding(...)` from Fabric API registers keybindings with standard category names (e.g. `"key.categories.advancement_progress"`).
+- **KeyMapping Categories:** In 1.21.4, `KeyBindingHelper.registerKeyBinding(...)` from Fabric API registers keybindings with standard category names (e.g. `"key.categories.advancements_refined"`).
 - **Unbound Hotkeys:** Use `InputConstants.Type.KEYSYM` and `InputConstants.UNKNOWN.getValue()` (which evaluates to `-1`).
 - **Screen Transitions:** Use `Minecraft.getInstance().setScreen(Screen)`.
 - **Current Screen Retrieval:** Access `Minecraft.getInstance().screen`.
@@ -302,5 +301,5 @@ Vanilla `AdvancementsScreen` was never designed to open child screens:
 .\gradlew runClient
 ```
 
-Built mod JAR output: `build/libs/advancement-progress-<version>.jar`.
-Config location: `<minecraft_run_directory>/config/advancement_progress_pins.json`.
+Built mod JAR output: `build/libs/advancements-refined-<version>.jar`.
+Config location: `<minecraft_run_directory>/config/advancements_refined_pins.json`.

@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "advancement-progress",
+	"id": "advancements-refined",
 	"version": "${version}",
-	"name": "Advancement Progress",
+	"name": "Advancements Refined",
 	"description": "Client-side advancement progress tracking mod for Minecraft.",
 	"authors": [
 		"dmystery"
@@ -12,7 +12,7 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/advancement-progress/icon.png",
+	"icon": "assets/advancements-refined/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": [
@@ -23,9 +23,9 @@
 		]
 	},
 	"mixins": [
-		"advancement-progress.mixins.json"
+		"advancements-refined.mixins.json"
 	],
-	"accessWidener": "advancement-progress.accesswidener",
+	"accessWidener": "advancements-refined.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.16.9",
 		"minecraft": ">=1.21.2 <=1.21.11",
