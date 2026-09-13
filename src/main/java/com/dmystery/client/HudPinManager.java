@@ -21,7 +21,7 @@ public class HudPinManager {
     public static final int MAX_PINNED = 3;
     private static final Map<String, List<Identifier>> WORLD_PINS = new HashMap<>();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("advancement_progress_pins.json");
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("advancements_refined_pins.json");
     private static boolean loaded = false;
 
     public static String getCurrentWorldKey() {

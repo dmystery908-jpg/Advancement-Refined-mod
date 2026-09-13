@@ -14,10 +14,10 @@ import java.nio.file.Path;
 
 public class AdvancementProgressConfig {
     public enum HudPosition {
-        TOP_RIGHT("advancement_progress.config.hud_position.top_right"),
-        TOP_LEFT("advancement_progress.config.hud_position.top_left"),
-        BOTTOM_RIGHT("advancement_progress.config.hud_position.bottom_right"),
-        BOTTOM_LEFT("advancement_progress.config.hud_position.bottom_left");
+        TOP_RIGHT("advancements_refined.config.hud_position.top_right"),
+        TOP_LEFT("advancements_refined.config.hud_position.top_left"),
+        BOTTOM_RIGHT("advancements_refined.config.hud_position.bottom_right"),
+        BOTTOM_LEFT("advancements_refined.config.hud_position.bottom_left");
 
         private final String key;
 
@@ -30,7 +30,7 @@ public class AdvancementProgressConfig {
         }
     }
 
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("advancement-progress.json");
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("advancements-refined.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static AdvancementProgressConfig INSTANCE = null;
 

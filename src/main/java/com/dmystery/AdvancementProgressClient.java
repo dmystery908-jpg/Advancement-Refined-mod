@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AdvancementProgressClient implements ClientModInitializer {
-    public static final String MOD_ID = "advancement-progress";
+    public static final String MOD_ID = AdvancementProgress.MOD_ID;
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static final KeyMapping.Category KEY_CATEGORY = KeyMapping.Category.register(
@@ -21,7 +21,7 @@ public class AdvancementProgressClient implements ClientModInitializer {
 
     public static final KeyMapping OPEN_SETTINGS_KEY = KeyMappingHelper.registerKeyMapping(
         new KeyMapping(
-            "key.advancement_progress.open_settings",
+            "key.advancements_refined.open_settings",
             InputConstants.Type.KEYSYM,
             InputConstants.UNKNOWN.getValue(),
             KEY_CATEGORY
@@ -43,6 +43,6 @@ public class AdvancementProgressClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("[Advancement Progress] Client initialized with HUD Pinning and Settings support.");
+        LOGGER.info("[Advancements Refined] Client initialized with HUD Pinning and Settings support.");
     }
 }

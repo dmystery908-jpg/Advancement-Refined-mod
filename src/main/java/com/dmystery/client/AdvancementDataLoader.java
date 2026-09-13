@@ -93,10 +93,10 @@ public class AdvancementDataLoader {
             }
 
             cachedVanillaAdvancements = List.copyOf(holders);
-            LOGGER.info("Advancement Progress: Loaded {} vanilla display advancements", cachedVanillaAdvancements.size());
+            LOGGER.info("Advancements Refined: Loaded {} vanilla display advancements", cachedVanillaAdvancements.size());
             return cachedVanillaAdvancements;
         } catch (Exception e) {
-            LOGGER.error("Advancement Progress: Failed to load vanilla advancements", e);
+            LOGGER.error("Advancements Refined: Failed to load vanilla advancements", e);
             return List.of();
         }
     }

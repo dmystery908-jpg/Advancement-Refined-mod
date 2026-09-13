@@ -65,7 +65,7 @@ public abstract class AdvancementWidgetMixin {
         }
 
         if (display != null && display.isHidden()) {
-            Component hiddenLabel = Component.translatable("advancement_progress.hidden_advancement")
+            Component hiddenLabel = Component.translatable("advancements_refined.hidden_advancement")
                 .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC);
             List<FormattedCharSequence> extraLines = this.minecraft.font.split(hiddenLabel, Math.max(160, this.width));
             List<FormattedCharSequence> combined = new ArrayList<>(this.description);
@@ -115,21 +115,21 @@ public abstract class AdvancementWidgetMixin {
 
         net.minecraft.network.chat.MutableComponent hintComp = Component.empty();
         if (isComposite) {
-            hintComp.append(Component.translatable("advancement_progress.hint.key_lmb").withStyle(ChatFormatting.GOLD))
+            hintComp.append(Component.translatable("advancements_refined.hint.key_lmb").withStyle(ChatFormatting.GOLD))
                 .append(Component.literal(" "))
-                .append(Component.translatable("advancement_progress.hint.action_inspect").withStyle(ChatFormatting.GRAY))
+                .append(Component.translatable("advancements_refined.hint.action_inspect").withStyle(ChatFormatting.GRAY))
                 .append(Component.literal("  •  ").withStyle(ChatFormatting.DARK_GRAY));
         }
 
-        hintComp.append(Component.translatable("advancement_progress.hint.key_rmb").withStyle(ChatFormatting.GOLD))
+        hintComp.append(Component.translatable("advancements_refined.hint.key_rmb").withStyle(ChatFormatting.GOLD))
             .append(Component.literal(" "));
 
         if (isPinned) {
-            hintComp.append(Component.translatable("advancement_progress.hint.action_unpin").withStyle(ChatFormatting.GRAY));
+            hintComp.append(Component.translatable("advancements_refined.hint.action_unpin").withStyle(ChatFormatting.GRAY));
         } else if (isFull) {
-            hintComp.append(Component.translatable("advancement_progress.hint.action_full").withStyle(ChatFormatting.DARK_GRAY));
+            hintComp.append(Component.translatable("advancements_refined.hint.action_full").withStyle(ChatFormatting.DARK_GRAY));
         } else {
-            hintComp.append(Component.translatable("advancement_progress.hint.action_pin").withStyle(ChatFormatting.GRAY));
+            hintComp.append(Component.translatable("advancements_refined.hint.action_pin").withStyle(ChatFormatting.GRAY));
         }
 
         int hintWidth = this.minecraft.font.width(hintComp);
