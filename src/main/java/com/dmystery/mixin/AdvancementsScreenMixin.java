@@ -9,6 +9,7 @@ import com.dmystery.client.AdvancementScreenLayout;
 import com.dmystery.client.AdvancementTabExtension;
 import com.dmystery.client.HudPinManager;
 import com.dmystery.client.InspectorPanel;
+import com.dmystery.client.PinnedChip;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementNode;
@@ -68,23 +69,6 @@ public abstract class AdvancementsScreenMixin extends Screen {
 
     @Unique
     private final InspectorPanel advancementProgress$inspector = new InspectorPanel();
-
-    @Unique
-    private static final class PinnedChip {
-        final ResourceLocation id;
-        final AdvancementHolder holder;
-        final Component title;
-        final ItemStack icon;
-        int x, y, w, h;
-        int closeX, closeY, closeW, closeH;
-
-        PinnedChip(ResourceLocation id, AdvancementHolder holder, Component title, ItemStack icon) {
-            this.id = id;
-            this.holder = holder;
-            this.title = title;
-            this.icon = icon;
-        }
-    }
 
     @Unique
     private final List<PinnedChip> advancementProgress$activeChips = new ArrayList<>();
