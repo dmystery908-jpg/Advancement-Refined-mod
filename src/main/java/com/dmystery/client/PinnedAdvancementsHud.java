@@ -31,7 +31,7 @@ public class PinnedAdvancementsHud implements HudElement {
         }
 
         // Only show during gameplay or chat
-        net.minecraft.client.gui.screens.Screen screen = mc.gui.screen();
+        net.minecraft.client.gui.screens.Screen screen = mc.screen;
         if (screen != null && !(screen instanceof ChatScreen)) {
             return;
         }

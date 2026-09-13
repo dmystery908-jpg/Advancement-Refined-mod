@@ -1,0 +1,7 @@
+accessWidener v1 official
+
+accessible class net/minecraft/client/gui/screens/advancements/AdvancementTabType
+accessible field net/minecraft/client/gui/screens/advancements/AdvancementTabType ABOVE Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;
+accessible field net/minecraft/client/gui/screens/advancements/AdvancementTabType BELOW Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;
+accessible field net/minecraft/client/gui/screens/advancements/AdvancementTabType LEFT Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;
+accessible field net/minecraft/client/gui/screens/advancements/AdvancementTabType RIGHT Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;

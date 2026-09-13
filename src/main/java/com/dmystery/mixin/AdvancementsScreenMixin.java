@@ -178,7 +178,7 @@ public abstract class AdvancementsScreenMixin extends Screen {
     }
 
     @Inject(method = "extractWindow", at = @At("HEAD"), cancellable = true)
-    private void onExtractWindow(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CallbackInfo ci) {
+    private void onExtractWindow(GuiGraphicsExtractor graphics, int x, int y, int mouseX, int mouseY, CallbackInfo ci) {
         int winW = AdvancementScreenLayout.getWindowWidth();
         int winH = AdvancementScreenLayout.getWindowHeight();
 
@@ -271,7 +271,7 @@ public abstract class AdvancementsScreenMixin extends Screen {
     }
 
     @Inject(method = "extractInside", at = @At("HEAD"), cancellable = true)
-    private void onExtractInside(GuiGraphicsExtractor graphics, CallbackInfo ci) {
+    private void onExtractInside(GuiGraphicsExtractor graphics, int x, int y, CallbackInfo ci) {
         AdvancementTab tab = this.selectedTab;
         int inW = AdvancementScreenLayout.getInsideWidth();
         int inH = AdvancementScreenLayout.getInsideHeight();
@@ -281,6 +281,9 @@ public abstract class AdvancementsScreenMixin extends Screen {
             int centerY = this.topPos + 18 + inH / 2;
             graphics.centeredText(this.font, NO_ADVANCEMENTS_LABEL, centerX, centerY - 9 / 2, 0xFFFFFFFF);
             graphics.centeredText(this.font, VERY_SAD_LABEL, centerX, this.topPos + 18 + inH - 9, 0xFFFFFFFF);
+            ci.cancel();
+        } else {
+            tab.extractContents(graphics, this.leftPos + 9, this.topPos + 18);
             ci.cancel();
         }
     }
@@ -573,45 +576,44 @@ public abstract class AdvancementsScreenMixin extends Screen {
         }
     }
 
-    /**
-     * When mouse is inside the inspector panel, cancel vanilla extractTooltips completely
-     * so no background node tooltips pop up through the inspector panel.
-     */
     @Inject(method = "extractTooltips", at = @At("HEAD"), cancellable = true)
-    private void onExtractTooltipsHead(GuiGraphicsExtractor graphics, int mouseX, int mouseY, CallbackInfo ci) {
+    private void onExtractTooltipsHead(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int leftPos, int topPos, CallbackInfo ci) {
         if (advancementProgress$inspector.isMouseOver(mouseX, mouseY)) {
             ci.cancel();
+            return;
         }
-    }
 
-    /**
-     * Suppress the small hover tooltip when the big inspector panel is open for that advancement.
-     */
-    @Redirect(
-        method = "extractTooltips",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementTab;extractTooltips(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V"
-        )
-    )
-    private void redirectExtractTooltips(AdvancementTab tab, GuiGraphicsExtractor graphics, int leftPos, int topPos) {
-        if (advancementProgress$inspector.isVisible() && tab instanceof AdvancementTabAccessor tabAccessor) {
-            AdvancementWidget hovered = tabAccessor.advancementProgress$getHovered();
-            if (hovered instanceof AdvancementWidgetAccessor widgetAccessor) {
-                if (advancementProgress$inspector.isInspecting(widgetAccessor.advancementProgress$getNode())) {
-                    // Do not render small tooltip when the big inspector panel is open for this advancement!
-                    return;
+        if (this.selectedTab != null) {
+            if (advancementProgress$inspector.isVisible() && this.selectedTab instanceof com.dmystery.client.AdvancementTabExtension tabExt) {
+                AdvancementWidget hovered = tabExt.advancementProgress$getHovered();
+                if (hovered instanceof AdvancementWidgetAccessor widgetAccessor) {
+                    if (advancementProgress$inspector.isInspecting(widgetAccessor.advancementProgress$getNode())) {
+                        ci.cancel();
+                        return;
+                    }
                 }
             }
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate((float) (this.leftPos + 9), (float) (this.topPos + 18));
+            graphics.nextStratum();
+            this.selectedTab.extractTooltips(
+                graphics,
+                mouseX - this.leftPos - 9,
+                mouseY - this.topPos - 18,
+                this.leftPos,
+                this.topPos
+            );
+            graphics.pose().popMatrix();
         }
-        tab.extractTooltips(graphics, leftPos, topPos);
+        ci.cancel();
     }
 
     @Inject(
         method = "extractRenderState",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;extractTooltips(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V"
+            target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;extractTooltips(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIII)V"
         )
     )
     private void onExtractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {

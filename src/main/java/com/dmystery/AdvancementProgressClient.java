@@ -37,8 +37,8 @@ public class AdvancementProgressClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (OPEN_SETTINGS_KEY.consumeClick()) {
-                if (client != null && client.gui != null) {
-                    client.setScreenAndShow(new AdvancementProgressConfigScreen(client.gui.screen()));
+                if (client != null) {
+                    client.setScreenAndShow(new AdvancementProgressConfigScreen(client.screen));
                 }
             }
         });

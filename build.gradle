@@ -3,6 +3,10 @@ plugins {
 	id 'maven-publish'
 }
 
+loom {
+	accessWidenerPath = file("src/main/resources/advancements-refined.accesswidener")
+}
+
 repositories {
 	maven {
 		name = "TerraformersMC"

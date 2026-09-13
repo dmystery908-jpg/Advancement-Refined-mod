@@ -17,13 +17,15 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import com.dmystery.client.AdvancementTabExtension;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 
 @Mixin(AdvancementTab.class)
-public abstract class AdvancementTabMixin {
+public abstract class AdvancementTabMixin implements AdvancementTabExtension {
     @Shadow private double scrollX;
     @Shadow private double scrollY;
     @Shadow private int minX;
@@ -34,8 +36,16 @@ public abstract class AdvancementTabMixin {
     @Shadow private boolean centered;
     @Shadow @Final private DisplayInfo display;
     @Shadow @Final private AdvancementWidget root;
-    @Shadow @Nullable private AdvancementWidget hovered;
     @Shadow @Final private Map<AdvancementHolder, AdvancementWidget> widgets;
+
+    @Unique
+    @Nullable
+    private AdvancementWidget advancementProgress$hovered;
+
+    @Override
+    public AdvancementWidget advancementProgress$getHovered() {
+        return this.advancementProgress$hovered;
+    }
 
     @Inject(method = "canScrollHorizontally", at = @At("HEAD"), cancellable = true)
     private void onCanScrollHorizontally(CallbackInfoReturnable<Boolean> cir) {
@@ -76,36 +86,6 @@ public abstract class AdvancementTabMixin {
             this.scrollY = Mth.clamp(this.scrollY + deltaY / scale, minScrollY, maxScrollY);
         } else {
             this.scrollY = (inH - (this.maxY + this.minY + 26)) / 2.0;
-        }
-        ci.cancel();
-    }
-
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void onTick(int mouseX, int mouseY, CallbackInfo ci) {
-        int inW = AdvancementScreenLayout.getInsideWidth();
-        int inH = AdvancementScreenLayout.getInsideHeight();
-        float scale = AdvancementScreenLayout.getZoom();
-        boolean found = false;
-        if (mouseX > 0 && mouseX < inW && mouseY > 0 && mouseY < inH) {
-            int sX = Mth.floor(this.scrollX);
-            int sY = Mth.floor(this.scrollY);
-            int treeMouseX = (int) Math.round(mouseX / scale);
-            int treeMouseY = (int) Math.round(mouseY / scale);
-            for (AdvancementWidget widget : this.widgets.values()) {
-                if (widget.isMouseOver(sX, sY, treeMouseX, treeMouseY)) {
-                    this.hovered = widget;
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (found) {
-            this.fade = Mth.clamp(this.fade + 0.06F, 0.0F, 0.3F);
-        } else {
-            this.fade = Mth.clamp(this.fade - 0.12F, 0.0F, 1.0F);
-            if (this.fade <= 0.0F) {
-                this.hovered = null;
-            }
         }
         ci.cancel();
     }
@@ -170,18 +150,44 @@ public abstract class AdvancementTabMixin {
     }
 
     @Inject(method = "extractTooltips", at = @At("HEAD"), cancellable = true)
-    private void onExtractTooltips(GuiGraphicsExtractor graphics, int x, int y, CallbackInfo ci) {
+    private void onExtractTooltips(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int leftPos, int topPos, CallbackInfo ci) {
         int inW = AdvancementScreenLayout.getInsideWidth();
         int inH = AdvancementScreenLayout.getInsideHeight();
         float scale = AdvancementScreenLayout.getZoom();
+
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(0.0f, 0.0f);
         graphics.fill(0, 0, inW, inH, Mth.floor(this.fade * 255.0F) << 24);
-        if (this.hovered != null) {
-            int sX = Mth.floor(this.scrollX);
-            int sY = Mth.floor(this.scrollY);
-            int adjustedSX = (int) Math.round((sX + this.hovered.getX()) * scale) - this.hovered.getX();
-            int adjustedSY = (int) Math.round((sY + this.hovered.getY()) * scale) - this.hovered.getY();
-            this.hovered.extractHover(graphics, adjustedSX, adjustedSY, this.fade, x, y);
+
+        boolean hoveredAny = false;
+        int sX = Mth.floor(this.scrollX);
+        int sY = Mth.floor(this.scrollY);
+
+        if (mouseX > 0 && mouseX < inW && mouseY > 0 && mouseY < inH) {
+            int treeMouseX = (int) Math.round(mouseX / scale);
+            int treeMouseY = (int) Math.round(mouseY / scale);
+            for (AdvancementWidget widget : this.widgets.values()) {
+                if (widget.isMouseOver(sX, sY, treeMouseX, treeMouseY)) {
+                    hoveredAny = true;
+                    this.advancementProgress$hovered = widget;
+                    int adjustedSX = (int) Math.round((sX + widget.getX()) * scale) - widget.getX();
+                    int adjustedSY = (int) Math.round((sY + widget.getY()) * scale) - widget.getY();
+                    widget.extractHover(graphics, adjustedSX, adjustedSY, this.fade, leftPos, topPos);
+                    break;
+                }
+            }
         }
+
+        if (hoveredAny) {
+            this.fade = Mth.clamp(this.fade + 0.02F, 0.0F, 0.3F);
+        } else {
+            this.fade = Mth.clamp(this.fade - 0.04F, 0.0F, 1.0F);
+            if (this.fade <= 0.0F) {
+                this.advancementProgress$hovered = null;
+            }
+        }
+
+        graphics.pose().popMatrix();
         ci.cancel();
     }
 }
