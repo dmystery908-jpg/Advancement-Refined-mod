@@ -62,7 +62,8 @@ public class PinnedAdvancementsHud implements HudElement {
         Font font = mc.font;
         int screenWidth = mc.getWindow().getGuiScaledWidth();
         int screenHeight = mc.getWindow().getGuiScaledHeight();
-        int cardWidth = 130;
+        int cardWidth = 160;
+        int textAvailableW = cardWidth - 25;
 
         boolean isBottom = config.hudPosition == AdvancementProgressConfig.HudPosition.BOTTOM_LEFT || config.hudPosition == AdvancementProgressConfig.HudPosition.BOTTOM_RIGHT;
         boolean isLeft = config.hudPosition == AdvancementProgressConfig.HudPosition.TOP_LEFT || config.hudPosition == AdvancementProgressConfig.HudPosition.BOTTOM_LEFT;
@@ -76,9 +77,18 @@ public class PinnedAdvancementsHud implements HudElement {
                 AdvancementHolder h = clientAdvancements.get(id);
                 if (h == null) continue;
                 DisplayInfo d = h.value().display().orElse(null);
+                Component title = d != null ? d.getTitle() : Component.literal(id.getPath());
                 Component desc = d != null ? d.getDescription() : Component.empty();
-                List<FormattedCharSequence> splitDesc = font.split(desc, cardWidth - 25);
-                int cardH = (h.value().requirements().size() > 1) ? 22 : (splitDesc.size() >= 2 ? 31 : 22);
+                AdvancementProgress prog = progressMap != null ? progressMap.get(h) : null;
+                boolean done = prog != null && prog.isDone();
+                Component titleToRender = done ? Component.literal("✔ ").append(title) : title;
+
+                int titleLines = Math.max(1, font.split(titleToRender, textAvailableW).size());
+                int descLines = !desc.getString().isEmpty() ? font.split(desc, textAvailableW).size() : 1;
+                boolean isComposite = h.value().requirements().size() > 1;
+
+                int contentH = (titleLines + descLines) * 9 + (isComposite ? 15 : 0);
+                int cardH = Math.max(24, 3 + contentH + 3);
                 totalCardsHeight += cardH + 4;
             }
             y = Math.max(4, screenHeight - totalCardsHeight - 4);
@@ -106,35 +116,50 @@ public class PinnedAdvancementsHud implements HudElement {
             Component title = display != null ? display.getTitle() : Component.literal(id.getPath());
             Component desc = display != null ? display.getDescription() : Component.empty();
 
-            int textAvailableW = cardWidth - 25;
             Component titleToRender = done ? Component.literal("✔ ").append(title) : title;
             List<FormattedCharSequence> splitTitle = font.split(titleToRender, textAvailableW);
-            FormattedCharSequence shortTitle = splitTitle.isEmpty() ? FormattedCharSequence.EMPTY : splitTitle.get(0);
-
             List<FormattedCharSequence> splitDesc = font.split(desc, textAvailableW);
 
-            int cardHeight;
-            if (isComposite) {
-                cardHeight = 22;
-            } else if (splitDesc.size() >= 2) {
-                cardHeight = 31;
-            } else {
-                cardHeight = 22;
-            }
+            // Dynamic card height fitting all lines cleanly
+            int titleLines = Math.max(1, splitTitle.size());
+            int descLines = !splitDesc.isEmpty() ? splitDesc.size() : 1;
+            int contentH = (titleLines + descLines) * 9 + (isComposite ? 15 : 0);
+            int cardHeight = Math.max(24, 3 + contentH + 3);
 
             // Card background & border
             graphics.fill(x, y, x + cardWidth, y + cardHeight, 0xAA0F1318);
             graphics.outline(x, y, cardWidth, cardHeight, done ? 0x882ECC71 : 0x55FFAA00);
 
-            // Icon vertically centered
+            // Icon: centered if short card, or placed near top if multi-line card
             ItemStack icon = display != null ? display.getIcon().create() : new ItemStack(Items.BOOK);
-            graphics.item(icon, x + 3, y + (cardHeight - 16) / 2);
+            int iconY = (cardHeight <= 28) ? y + (cardHeight - 16) / 2 : y + 4;
+            graphics.item(icon, x + 3, iconY);
 
-            // Title
+            int textY = y + 3;
+
+            // Render ALL title lines without truncation
             int titleColor = done ? 0xFF2ECC71 : 0xFFFFAA00;
-            graphics.text(font, shortTitle, x + 21, y + 3, titleColor, true);
+            for (FormattedCharSequence tLine : splitTitle) {
+                graphics.text(font, tLine, x + 21, textY, titleColor, true);
+                textY += 9;
+            }
 
-            // Progress text and micro-bar (for composite) OR description (for simple)
+            // Render ALL description lines without truncation
+            int descColor = done ? 0xFF88DDAA : 0xFFCCCCCC;
+            if (!splitDesc.isEmpty()) {
+                for (FormattedCharSequence dLine : splitDesc) {
+                    graphics.text(font, dLine, x + 21, textY, descColor, true);
+                    textY += 9;
+                }
+            } else {
+                Component statusText = done
+                    ? Component.translatable("advancements_refined.hud.done")
+                    : Component.translatable("advancements_refined.hud.in_progress");
+                graphics.text(font, statusText, x + 21, textY, descColor, true);
+                textY += 9;
+            }
+
+            // Progress text and micro-bar (for composite)
             if (isComposite) {
                 int doneCount;
                 if (prog != null && prog.isDone()) {
@@ -150,31 +175,19 @@ public class PinnedAdvancementsHud implements HudElement {
                 float pct = totalCriteria > 0 ? (float) doneCount / totalCriteria : 0.0f;
                 String pctStr = String.format(java.util.Locale.ROOT, "%.0f%%", pct * 100.0f);
                 Component progLabel = Component.literal(doneCount + "/" + totalCriteria + " (" + pctStr + ")");
-                graphics.text(font, progLabel, x + 21, y + 11, 0xFFAAAAAA, true);
+                graphics.text(font, progLabel, x + 21, textY, 0xFFAAAAAA, true);
+                textY += 9;
 
                 // Micro progress bar
                 int barW = cardWidth - 25;
-                int barH = 1;
+                int barH = 2;
                 int barX = x + 21;
-                int barY = y + 20;
+                int barY = textY + 1;
                 graphics.fill(barX, barY, barX + barW, barY + barH, 0xFF333333);
                 int fillW = (int) Math.round(barW * pct);
                 if (fillW > 0) {
                     int barColor = pct >= 1.0f ? 0xFFFFD700 : 0xFF2ECC71;
                     graphics.fill(barX, barY, barX + fillW, barY + barH, barColor);
-                }
-            } else {
-                int descColor = done ? 0xFF88DDAA : 0xFFCCCCCC;
-                if (!splitDesc.isEmpty()) {
-                    graphics.text(font, splitDesc.get(0), x + 21, y + 12, descColor, true);
-                    if (splitDesc.size() >= 2) {
-                        graphics.text(font, splitDesc.get(1), x + 21, y + 21, descColor, true);
-                    }
-                } else {
-                    Component statusText = done
-                        ? Component.translatable("advancements_refined.hud.done")
-                        : Component.translatable("advancements_refined.hud.in_progress");
-                    graphics.text(font, statusText, x + 21, y + 12, descColor, true);
                 }
             }
 
