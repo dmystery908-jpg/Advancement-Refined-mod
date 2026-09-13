@@ -3,7 +3,7 @@ package com.dmystery.client;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +25,7 @@ public class CriterionResolver {
 
     private static CriterionDisplay computeDisplay(String raw) {
         String cleanName = raw.trim();
-        Identifier id = Identifier.tryParse(cleanName.contains(":") ? cleanName : "minecraft:" + cleanName);
+        ResourceLocation id = ResourceLocation.tryParse(cleanName.contains(":") ? cleanName : "minecraft:" + cleanName);
 
         if (id != null) {
             // 1. Check if it matches an Item
@@ -40,8 +40,8 @@ public class CriterionResolver {
             if (entityHolder.isPresent()) {
                 EntityType<?> entityType = entityHolder.get().value();
                 Component entityName = entityType.getDescription();
-                Optional<Holder<Item>> eggHolder = SpawnEggItem.byId(entityType);
-                ItemStack icon = eggHolder.map(ItemStack::new).orElse(new ItemStack(Items.ZOMBIE_HEAD));
+                SpawnEggItem egg = SpawnEggItem.byId(entityType);
+                ItemStack icon = egg != null ? new ItemStack(egg) : new ItemStack(Items.ZOMBIE_HEAD);
                 return new CriterionDisplay(icon, entityName);
             }
 

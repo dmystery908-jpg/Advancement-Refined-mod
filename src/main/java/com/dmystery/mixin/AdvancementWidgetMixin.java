@@ -5,7 +5,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.AdvancementNode;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
 import net.minecraft.network.chat.Component;
@@ -33,7 +33,7 @@ public abstract class AdvancementWidgetMixin {
     @Shadow private int y;
 
     @Redirect(
-        method = "extractRenderState",
+        method = "draw",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/advancements/DisplayInfo;isHidden()Z"
@@ -78,20 +78,20 @@ public abstract class AdvancementWidgetMixin {
         }
     }
 
-    @Inject(method = "extractRenderState", at = @At("RETURN"))
-    private void renderPinBadge(GuiGraphicsExtractor graphics, int scrollX, int scrollY, CallbackInfo ci) {
+    @Inject(method = "draw", at = @At("RETURN"))
+    private void renderPinBadge(GuiGraphics graphics, int scrollX, int scrollY, CallbackInfo ci) {
         if (HudPinManager.isPinned(this.advancementNode.holder().id())) {
             // Elegant gold border around the frame
-            graphics.outline(scrollX + this.x + 2, scrollY + this.y - 1, 28, 28, 0xFFFFD700);
+            graphics.renderOutline(scrollX + this.x + 2, scrollY + this.y - 1, 28, 28, 0xFFFFD700);
             // Bright gold star in the upper corner without ugly black box
             int starX = scrollX + this.x + 20;
             int starY = scrollY + this.y - 2;
-            graphics.text(this.minecraft.font, Component.literal("★"), starX, starY, 0xFFFFD700, false);
+            graphics.drawString(this.minecraft.font, Component.literal("★"), starX, starY, 0xFFFFD700, false);
         }
     }
 
     @Redirect(
-        method = "extractHover",
+        method = "drawHover",
         at = @At(
             value = "FIELD",
             target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementWidget;description:Ljava/util/List;"

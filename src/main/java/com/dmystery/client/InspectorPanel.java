@@ -5,7 +5,7 @@ import net.minecraft.advancements.AdvancementNode;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -147,17 +147,17 @@ public class InspectorPanel {
         scrollOffset = Mth.clamp(scrollOffset, 0.0, maxScroll);
     }
 
-    public void render(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY) {
+    public void render(GuiGraphics graphics, Font font, int mouseX, int mouseY) {
         if (!visible) return;
 
         // 1. Panel Background and border
         graphics.fill(x, y, x + width, y + height, 0xF0121212);
-        graphics.outline(x, y, width, height, 0xFF444444);
+        graphics.renderOutline(x, y, width, height, 0xFF444444);
 
         // 2. Header
         // Icon
         if (!advancementIcon.isEmpty()) {
-            graphics.item(advancementIcon, x + 6, y + 6);
+            graphics.renderItem(advancementIcon, x + 6, y + 6);
         }
 
         // Title
@@ -165,7 +165,7 @@ public class InspectorPanel {
         int titleMaxW = width - 42;
         java.util.List<net.minecraft.util.FormattedCharSequence> titleLines = font.split(advancementTitle, titleMaxW);
         net.minecraft.util.FormattedCharSequence shortTitle = titleLines.isEmpty() ? net.minecraft.util.FormattedCharSequence.EMPTY : titleLines.get(0);
-        graphics.text(font, shortTitle, textX, y + 6, 0xFFFFAA00, true);
+        graphics.drawString(font, shortTitle, textX, y + 6, 0xFFFFAA00, true);
 
         // Progress counter
         float pct = totalCount > 0 ? (float) completedCount / totalCount : 0.0f;
@@ -174,13 +174,13 @@ public class InspectorPanel {
         if (display != null && display.isHidden()) {
             progressLabel = progressLabel.copy().append(Component.literal(" ")).append(Component.translatable("advancement_progress.hidden_advancement"));
         }
-        graphics.text(font, progressLabel, textX, y + 16, 0xFFAAAAAA, true);
+        graphics.drawString(font, progressLabel, textX, y + 16, 0xFFAAAAAA, true);
 
         // Close button (X)
         int closeX = x + width - 15;
         int closeY = y + 5;
         boolean closeHovered = mouseX >= closeX && mouseX <= closeX + 10 && mouseY >= closeY && mouseY <= closeY + 10;
-        graphics.text(font, "✕", closeX + 1, closeY + 1, closeHovered ? 0xFFFF5555 : 0xFF888888, true);
+        graphics.drawString(font, "✕", closeX + 1, closeY + 1, closeHovered ? 0xFFFF5555 : 0xFF888888, true);
 
         // Pin button (★)
         int pinX = closeX - 14;
@@ -188,7 +188,7 @@ public class InspectorPanel {
         boolean isPinned = node != null && HudPinManager.isPinned(node.holder().id());
         boolean pinHovered = mouseX >= pinX && mouseX <= pinX + 12 && mouseY >= pinY && mouseY <= pinY + 10;
         int pinColor = isPinned ? 0xFF55FFFF : (pinHovered ? 0xFFFFFFFF : 0xFF888888);
-        graphics.text(font, "★", pinX + 1, pinY + 1, pinColor, true);
+        graphics.drawString(font, "★", pinX + 1, pinY + 1, pinColor, true);
 
         if (pinHovered) {
             Component pinTip = isPinned
@@ -196,7 +196,7 @@ public class InspectorPanel {
                 : (HudPinManager.getPinnedCount() >= HudPinManager.getMaxPinned()
                     ? Component.translatable("advancement_progress.pin.max_reached", HudPinManager.getMaxPinned())
                     : Component.translatable("advancement_progress.pin.pin_tooltip"));
-            graphics.setTooltipForNextFrame(pinTip, mouseX, mouseY);
+            graphics.renderTooltip(font, pinTip, mouseX, mouseY);
         }
 
         // Mini progress bar in header
@@ -220,13 +220,13 @@ public class InspectorPanel {
 
         int filterBg = filterHovered ? 0xFF2E2E2E : 0xFF1F1F1F;
         graphics.fill(filterBtnX, filterBtnY, filterBtnX + filterBtnW, filterBtnY + filterBtnH, filterBg);
-        graphics.outline(filterBtnX, filterBtnY, filterBtnW, filterBtnH, filterHovered ? 0xFF666666 : 0xFF3A3A3A);
+        graphics.renderOutline(filterBtnX, filterBtnY, filterBtnW, filterBtnH, filterHovered ? 0xFF666666 : 0xFF3A3A3A);
 
         String checkMark = hideCompleted ? "✔ " : "   ";
         Component filterText = Component.literal(checkMark).append(
             Component.translatable("advancement_progress.inspector.hide_completed")
         );
-        graphics.centeredText(font, filterText, filterBtnX + filterBtnW / 2, filterBtnY + 3, hideCompleted ? 0xFF55FF55 : 0xFFCCCCCC);
+        graphics.drawCenteredString(font, filterText, filterBtnX + filterBtnW / 2, filterBtnY + 3, hideCompleted ? 0xFF55FF55 : 0xFFCCCCCC);
 
         // 4. Criteria List
         int listX = x + 4;
@@ -254,14 +254,14 @@ public class InspectorPanel {
 
             // Status icon: checkmark vs bullet
             if (item.done()) {
-                graphics.text(font, "✔", listX + 2, rowY + 5, 0xFF2ECC71, true);
+                graphics.drawString(font, "✔", listX + 2, rowY + 5, 0xFF2ECC71, true);
             } else {
-                graphics.text(font, "○", listX + 2, rowY + 5, 0xFF777777, true);
+                graphics.drawString(font, "○", listX + 2, rowY + 5, 0xFF777777, true);
             }
 
             // Item/entity icon
             if (!item.icon().isEmpty()) {
-                graphics.item(item.icon(), listX + 12, rowY + 1);
+                graphics.renderItem(item.icon(), listX + 12, rowY + 1);
             }
 
             // Name
@@ -270,11 +270,11 @@ public class InspectorPanel {
             java.util.List<net.minecraft.util.FormattedCharSequence> nameLines = font.split(item.name(), nameMaxW);
             net.minecraft.util.FormattedCharSequence shortName = nameLines.isEmpty() ? net.minecraft.util.FormattedCharSequence.EMPTY : nameLines.get(0);
             int textColor = item.done() ? 0xFF88D49E : 0xFFE0E0E0;
-            graphics.text(font, shortName, nameX, rowY + 5, textColor, true);
+            graphics.drawString(font, shortName, nameX, rowY + 5, textColor, true);
 
             // Row tooltip if hovered and mouse is inside list view
             if (rowHovered && mouseY >= listY && mouseY <= listBottom) {
-                graphics.setTooltipForNextFrame(item.name(), mouseX, mouseY);
+                graphics.renderTooltip(font, item.name(), mouseX, mouseY);
             }
         }
 

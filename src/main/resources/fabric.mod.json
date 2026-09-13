@@ -25,10 +25,11 @@
 	"mixins": [
 		"advancement-progress.mixins.json"
 	],
-		"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": ">=26.1 <=26.2",
-		"java": ">=25",
+	"accessWidener": "advancement-progress.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": ">=1.21.2 <=1.21.4",
+		"java": ">=21",
 		"fabric-api": "*"
 	}
 }

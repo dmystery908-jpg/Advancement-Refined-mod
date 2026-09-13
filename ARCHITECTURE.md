@@ -1,6 +1,6 @@
 # Architecture & Developer Guide — Advancement Progress Mod
 
-> **Target Platform:** Minecraft **26.2** (Fabric Loader `>=0.19.5`, Loom `1.17.20`, Java **25**)  
+> **Target Platform:** Minecraft **1.21.4** (Fabric Loader `>=0.16.10`, Loom `1.9.2`, Java **21**)  
 > **Mod ID:** `advancement-progress`  
 > **Environment:** **Client-Only** (zero custom network packets; 100% compatible with pure vanilla servers, Realms, Paper/Spigot, and modded Fabric servers)
 
@@ -23,27 +23,28 @@
 
 ```
 advancement-progress/
-├── build.gradle                              # Fabric Loom 1.17.20 build script (Java 25)
-├── gradle.properties                         # Dependencies: MC 26.2, Fabric Loader, Fabric API
+├── build.gradle                              # Fabric Loom 1.9.2 build script (Java 21)
+├── gradle.properties                         # Dependencies: MC 1.21.4, Fabric Loader, Fabric API
 ├── ARCHITECTURE.md                           # This architecture documentation
 ├── src/
 │   └── main/
 │       ├── java/
 │       │   └── com/
 │       │       └── dmystery/
-│       │           ├── AdvancementProgress.java         # Common constants, logger, Identifier helper
-│       │           ├── AdvancementProgressClient.java   # ClientModInitializer, HUD element registration
+│       │           ├── AdvancementProgress.java         # Common constants, logger, ResourceLocation helper
+│       │           ├── AdvancementProgressClient.java   # ClientModInitializer, keybindings, HudRenderCallback
 │       │           ├── client/
 │       │           │   ├── AdvancementCache.java        # In-memory stats cache & dirty flag logic
 │       │           │   ├── AdvancementDataLoader.java   # Offline/client data pack advancement discovery
 │       │           │   ├── AdvancementProgressConfig.java       # Singleton JSON config (config/advancement-progress.json)
 │       │           │   ├── AdvancementProgressConfigScreen.java # Vanilla settings GUI screen
 │       │           │   ├── AdvancementScreenLayout.java # Responsive screen bounds & zoom constants
+│       │           │   ├── AdvancementTabExtension.java # Interface exposing hovered widget on tabs
 │       │           │   ├── CriterionResolver.java       # Translates criterion IDs to item/entity icons & names
 │       │           │   ├── HudPinManager.java           # World-scoped pin persistence & config manager
 │       │           │   ├── InspectorPanel.java          # Interactive criteria inspector dialog UI
 │       │           │   ├── ModMenuIntegration.java      # Mod Menu API entrypoint (ConfigScreenFactory)
-│       │           │   └── PinnedAdvancementsHud.java   # In-game HUD element renderer (HudElement)
+│       │           │   └── PinnedAdvancementsHud.java   # In-game HUD element renderer (HudRenderCallback)
 │       │           └── mixin/
 │       │               ├── AdvancementsScreenMixin.java # Custom window frame, top bars, pin click handler
 │       │               ├── AdvancementsScreenAccessor.java  # Accessor for selectedTab and lastScreen
@@ -51,12 +52,13 @@ advancement-progress/
 │       │               ├── AdvancementTabTypeMixin.java # Aligns right and bottom tabs to expanded window
 │       │               ├── AdvancementWidgetMixin.java  # Pin star badge, native tooltip hint redirection
 │       │               ├── ClientAdvancementsMixin.java # Syncs incoming packet updates with cache
-│       │               ├── AdvancementTabAccessor.java      # Accessor for tab widgets, scroll & hover
-│       │               ├── AdvancementWidgetAccessor.java   # Accessor for node, progress, icon & display
+│       │               ├── AdvancementTabAccessor.java      # Accessor for tab widgets & scroll
+│       │               ├── AdvancementWidgetAccessor.java   # Accessor for node, progress & display
 │       │               └── ClientAdvancementsAccessor.java  # Accessor for progress map in ClientAdvancements
 │       └── resources/
 │           ├── fabric.mod.json                          # Mod metadata (client environment)
-│           ├── advancement-progress.mixins.json         # Mixin configuration (Java 25 compatibility)
+│           ├── advancement-progress.mixins.json         # Mixin configuration (Java 21 compatibility)
+│           ├── advancement-progress.accesswidener       # Access widener for AdvancementTabType
 │           └── assets/
 │               └── advancement-progress/
 │                   ├── icon.png                         # Mod icon
@@ -272,16 +274,17 @@ When applying zoom scale (`scale = 0.65f`) via `graphics.pose().scale(scale, sca
 Do not render floating secondary tooltips (such as `graphics.setTooltipForNextFrame(hint, mouseX, mouseY + 15)`). Secondary tooltips collide with and obscure the main advancement description.
 - Instead, `AdvancementWidgetMixin` redirects the `description` field in `AdvancementWidget.extractHover` to append hint lines directly at the bottom of the native box.
 
-### 5.7 Screen Navigation & KeyMapping in Minecraft 26.2
-- **KeyMapping Categories:** In 26.2, `KeyMapping.Category.register(Identifier)` registers custom keybinding categories dynamically. The translation key format is `Identifier.toLanguageKey("key.category")` (e.g. `key.category.advancement-progress.key_category`).
+### 5.7 Screen Navigation & KeyMapping in Minecraft 1.21.4
+- **KeyMapping Categories:** In 1.21.4, `KeyBindingHelper.registerKeyBinding(...)` from Fabric API registers keybindings with standard category names (e.g. `"key.categories.advancement_progress"`).
 - **Unbound Hotkeys:** Use `InputConstants.Type.KEYSYM` and `InputConstants.UNKNOWN.getValue()` (which evaluates to `-1`).
-- **Screen Transitions:** `Minecraft.setScreen(Screen)` was replaced in 26.2 by `Minecraft.setScreenAndShow(Screen)`.
-- **Current Screen Retrieval:** `Minecraft.screen` is private in 26.2; retrieve the active screen via `client.gui.screen()`.
+- **Screen Transitions:** Use `Minecraft.getInstance().setScreen(Screen)`.
+- **Current Screen Retrieval:** Access `Minecraft.getInstance().screen`.
+- **HUD Rendering:** Uses Fabric API `HudRenderCallback.EVENT.register((graphics, deltaTracker) -> ...)`.
 
 ### 5.8 Sub-Screen Lifecycle & Preserving AdvancementsScreen
 Vanilla `AdvancementsScreen` was never designed to open child screens:
 - **Pitfall:** Opening any sub-screen triggers `AdvancementsScreen.removed()`, which calls `advancements.setListener(null)` and sends `ServerboundSeenAdvancementsPacket.closedScreen()`.
-- Returning to the existing `AdvancementsScreen` instance via `setScreenAndShow(parent)` leaves `listener == null` because `Screen.init(w, h)` skips `init()` when `initialized == true`. Consequently, tab switching and progress packet handling stop functioning until the screen is closed and reopened with 'L'.
+- Returning to the existing `AdvancementsScreen` instance via `setScreen(parent)` leaves `listener == null` because `Screen.init(w, h)` skips `init()` when `initialized == true`. Consequently, tab switching and progress packet handling stop functioning until the screen is closed and reopened with 'L'.
 - **Correct Solution:** When closing sub-screens (`AdvancementProgressConfigScreen.onClose()`), construct a fresh `new AdvancementsScreen(adv, lastScreen)` and restore the active tab (`adv.setSelectedTab(currentTabHolder, true)`). Additionally, directly assign `this.selectedTab = tab` inside `AdvancementsScreenMixin.mouseClicked`.
 
 ---

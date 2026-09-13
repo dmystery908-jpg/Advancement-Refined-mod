@@ -1,29 +1,29 @@
 package com.dmystery.mixin;
 
 import com.dmystery.client.AdvancementScreenLayout;
+import com.dmystery.client.AdvancementTabExtension;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.DisplayInfo;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.core.ClientAsset;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 
 @Mixin(AdvancementTab.class)
-public abstract class AdvancementTabMixin {
+public abstract class AdvancementTabMixin implements AdvancementTabExtension {
     @Shadow private double scrollX;
     @Shadow private double scrollY;
     @Shadow private int minX;
@@ -34,23 +34,15 @@ public abstract class AdvancementTabMixin {
     @Shadow private boolean centered;
     @Shadow @Final private DisplayInfo display;
     @Shadow @Final private AdvancementWidget root;
-    @Shadow @Nullable private AdvancementWidget hovered;
     @Shadow @Final private Map<AdvancementHolder, AdvancementWidget> widgets;
 
-    @Inject(method = "canScrollHorizontally", at = @At("HEAD"), cancellable = true)
-    private void onCanScrollHorizontally(CallbackInfoReturnable<Boolean> cir) {
-        float scale = AdvancementScreenLayout.getZoom();
-        double inW = AdvancementScreenLayout.getInsideWidth() / scale;
-        int treeW = this.maxX - this.minX + 26;
-        cir.setReturnValue(treeW > inW);
-    }
+    @Unique
+    @Nullable
+    private AdvancementWidget advancementProgress$hovered;
 
-    @Inject(method = "canScrollVertically", at = @At("HEAD"), cancellable = true)
-    private void onCanScrollVertically(CallbackInfoReturnable<Boolean> cir) {
-        float scale = AdvancementScreenLayout.getZoom();
-        double inH = AdvancementScreenLayout.getInsideHeight() / scale;
-        int treeH = this.maxY - this.minY + 26;
-        cir.setReturnValue(treeH > inH);
+    @Override
+    public AdvancementWidget advancementProgress$getHovered() {
+        return this.advancementProgress$hovered;
     }
 
     @Inject(method = "scroll", at = @At("HEAD"), cancellable = true)
@@ -80,38 +72,8 @@ public abstract class AdvancementTabMixin {
         ci.cancel();
     }
 
-    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void onTick(int mouseX, int mouseY, CallbackInfo ci) {
-        int inW = AdvancementScreenLayout.getInsideWidth();
-        int inH = AdvancementScreenLayout.getInsideHeight();
-        float scale = AdvancementScreenLayout.getZoom();
-        boolean found = false;
-        if (mouseX > 0 && mouseX < inW && mouseY > 0 && mouseY < inH) {
-            int sX = Mth.floor(this.scrollX);
-            int sY = Mth.floor(this.scrollY);
-            int treeMouseX = (int) Math.round(mouseX / scale);
-            int treeMouseY = (int) Math.round(mouseY / scale);
-            for (AdvancementWidget widget : this.widgets.values()) {
-                if (widget.isMouseOver(sX, sY, treeMouseX, treeMouseY)) {
-                    this.hovered = widget;
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (found) {
-            this.fade = Mth.clamp(this.fade + 0.06F, 0.0F, 0.3F);
-        } else {
-            this.fade = Mth.clamp(this.fade - 0.12F, 0.0F, 1.0F);
-            if (this.fade <= 0.0F) {
-                this.hovered = null;
-            }
-        }
-        ci.cancel();
-    }
-
-    @Inject(method = "extractContents", at = @At("HEAD"), cancellable = true)
-    private void onExtractContents(GuiGraphicsExtractor graphics, int x, int y, CallbackInfo ci) {
+    @Inject(method = "drawContents", at = @At("HEAD"), cancellable = true)
+    private void onDrawContents(GuiGraphics graphics, int x, int y, CallbackInfo ci) {
         int inW = AdvancementScreenLayout.getInsideWidth();
         int inH = AdvancementScreenLayout.getInsideHeight();
         float scale = AdvancementScreenLayout.getZoom();
@@ -125,11 +87,10 @@ public abstract class AdvancementTabMixin {
         }
 
         graphics.enableScissor(x, y, x + inW, y + inH);
-        graphics.pose().pushMatrix();
-        graphics.pose().translate((float) x, (float) y);
+        graphics.pose().pushPose();
+        graphics.pose().translate((float) x, (float) y, 0.0f);
 
-        Identifier bg = this.display.getBackground()
-                .map(ClientAsset.ResourceTexture::texturePath)
+        ResourceLocation bg = this.display.getBackground()
                 .orElse(TextureManager.INTENTIONAL_MISSING_TEXTURE);
 
         int sX = Mth.floor(this.scrollX);
@@ -142,7 +103,7 @@ public abstract class AdvancementTabMixin {
         for (int col = -1; col <= cols; col++) {
             for (int row = -1; row <= rows; row++) {
                 graphics.blit(
-                        RenderPipelines.GUI_TEXTURED,
+                        RenderType::guiTextured,
                         bg,
                         tileOffsetX + col * 16,
                         tileOffsetY + row * 16,
@@ -154,34 +115,60 @@ public abstract class AdvancementTabMixin {
         }
 
         // Scale the tree content (connectivity and widgets)
-        graphics.pose().pushMatrix();
-        graphics.pose().scale(scale, scale);
+        graphics.pose().pushPose();
+        graphics.pose().scale(scale, scale, 1.0f);
 
-        this.root.extractConnectivity(graphics, sX, sY, true);
-        this.root.extractConnectivity(graphics, sX, sY, false);
-        this.root.extractRenderState(graphics, sX, sY);
+        this.root.drawConnectivity(graphics, sX, sY, true);
+        this.root.drawConnectivity(graphics, sX, sY, false);
+        this.root.draw(graphics, sX, sY);
 
-        graphics.pose().popMatrix();
+        graphics.pose().popPose();
 
-        graphics.pose().popMatrix();
+        graphics.pose().popPose();
         graphics.disableScissor();
 
         ci.cancel();
     }
 
-    @Inject(method = "extractTooltips", at = @At("HEAD"), cancellable = true)
-    private void onExtractTooltips(GuiGraphicsExtractor graphics, int x, int y, CallbackInfo ci) {
+    @Inject(method = "drawTooltips", at = @At("HEAD"), cancellable = true)
+    private void onDrawTooltips(GuiGraphics graphics, int mouseX, int mouseY, int leftPos, int topPos, CallbackInfo ci) {
         int inW = AdvancementScreenLayout.getInsideWidth();
         int inH = AdvancementScreenLayout.getInsideHeight();
         float scale = AdvancementScreenLayout.getZoom();
+
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0f, 0.0f, -200.0f);
         graphics.fill(0, 0, inW, inH, Mth.floor(this.fade * 255.0F) << 24);
-        if (this.hovered != null) {
-            int sX = Mth.floor(this.scrollX);
-            int sY = Mth.floor(this.scrollY);
-            int adjustedSX = (int) Math.round((sX + this.hovered.getX()) * scale) - this.hovered.getX();
-            int adjustedSY = (int) Math.round((sY + this.hovered.getY()) * scale) - this.hovered.getY();
-            this.hovered.extractHover(graphics, adjustedSX, adjustedSY, this.fade, x, y);
+
+        boolean hoveredAny = false;
+        int sX = Mth.floor(this.scrollX);
+        int sY = Mth.floor(this.scrollY);
+
+        if (mouseX > 0 && mouseX < inW && mouseY > 0 && mouseY < inH) {
+            int treeMouseX = (int) Math.round(mouseX / scale);
+            int treeMouseY = (int) Math.round(mouseY / scale);
+            for (AdvancementWidget widget : this.widgets.values()) {
+                if (widget.isMouseOver(sX, sY, treeMouseX, treeMouseY)) {
+                    hoveredAny = true;
+                    this.advancementProgress$hovered = widget;
+                    int adjustedSX = (int) Math.round((sX + widget.getX()) * scale) - widget.getX();
+                    int adjustedSY = (int) Math.round((sY + widget.getY()) * scale) - widget.getY();
+                    widget.drawHover(graphics, adjustedSX, adjustedSY, this.fade, leftPos, topPos);
+                    break;
+                }
+            }
         }
+
+        if (hoveredAny) {
+            this.fade = Mth.clamp(this.fade + 0.02F, 0.0F, 0.3F);
+        } else {
+            this.fade = Mth.clamp(this.fade - 0.04F, 0.0F, 1.0F);
+            if (this.fade <= 0.0F) {
+                this.advancementProgress$hovered = null;
+            }
+        }
+
+        graphics.pose().popPose();
         ci.cancel();
     }
 }

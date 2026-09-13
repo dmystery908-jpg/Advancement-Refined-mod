@@ -1,7 +1,7 @@
 package com.dmystery.client;
 
 import com.dmystery.mixin.ClientAdvancementsAccessor;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
@@ -9,12 +9,12 @@ import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.multiplayer.ClientAdvancements;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,16 +22,16 @@ import net.minecraft.world.item.Items;
 import java.util.List;
 import java.util.Map;
 
-public class PinnedAdvancementsHud implements HudElement {
+public class PinnedAdvancementsHud implements HudRenderCallback {
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+    public void onHudRender(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return;
         }
 
         // Only show during gameplay or chat
-        net.minecraft.client.gui.screens.Screen screen = mc.gui.screen();
+        net.minecraft.client.gui.screens.Screen screen = mc.screen;
         if (screen != null && !(screen instanceof ChatScreen)) {
             return;
         }
@@ -41,7 +41,7 @@ public class PinnedAdvancementsHud implements HudElement {
             return;
         }
 
-        List<Identifier> pinnedList = HudPinManager.getPinned();
+        List<ResourceLocation> pinnedList = HudPinManager.getPinned();
         if (pinnedList.isEmpty()) {
             return;
         }
@@ -72,7 +72,7 @@ public class PinnedAdvancementsHud implements HudElement {
 
         if (isBottom) {
             int totalCardsHeight = 0;
-            for (Identifier id : pinnedList) {
+            for (ResourceLocation id : pinnedList) {
                 AdvancementHolder h = clientAdvancements.get(id);
                 if (h == null) continue;
                 DisplayInfo d = h.value().display().orElse(null);
@@ -84,7 +84,7 @@ public class PinnedAdvancementsHud implements HudElement {
             y = Math.max(4, screenHeight - totalCardsHeight - 4);
         }
 
-        for (Identifier id : pinnedList) {
+        for (ResourceLocation id : pinnedList) {
             AdvancementHolder holder = clientAdvancements.get(id);
             if (holder == null) {
                 continue;
@@ -124,15 +124,15 @@ public class PinnedAdvancementsHud implements HudElement {
 
             // Card background & border
             graphics.fill(x, y, x + cardWidth, y + cardHeight, 0xAA0F1318);
-            graphics.outline(x, y, cardWidth, cardHeight, done ? 0x882ECC71 : 0x55FFAA00);
+            graphics.renderOutline(x, y, cardWidth, cardHeight, done ? 0x882ECC71 : 0x55FFAA00);
 
             // Icon vertically centered
-            ItemStack icon = display != null ? display.getIcon().create() : new ItemStack(Items.BOOK);
-            graphics.item(icon, x + 3, y + (cardHeight - 16) / 2);
+            ItemStack icon = display != null ? display.getIcon() : new ItemStack(Items.BOOK);
+            graphics.renderItem(icon, x + 3, y + (cardHeight - 16) / 2);
 
             // Title
             int titleColor = done ? 0xFF2ECC71 : 0xFFFFAA00;
-            graphics.text(font, shortTitle, x + 21, y + 3, titleColor, true);
+            graphics.drawString(font, shortTitle, x + 21, y + 3, titleColor, true);
 
             // Progress text and micro-bar (for composite) OR description (for simple)
             if (isComposite) {
@@ -150,7 +150,7 @@ public class PinnedAdvancementsHud implements HudElement {
                 float pct = totalCriteria > 0 ? (float) doneCount / totalCriteria : 0.0f;
                 String pctStr = String.format(java.util.Locale.ROOT, "%.0f%%", pct * 100.0f);
                 Component progLabel = Component.literal(doneCount + "/" + totalCriteria + " (" + pctStr + ")");
-                graphics.text(font, progLabel, x + 21, y + 11, 0xFFAAAAAA, true);
+                graphics.drawString(font, progLabel, x + 21, y + 11, 0xFFAAAAAA, true);
 
                 // Micro progress bar
                 int barW = cardWidth - 25;
@@ -166,15 +166,15 @@ public class PinnedAdvancementsHud implements HudElement {
             } else {
                 int descColor = done ? 0xFF88DDAA : 0xFFCCCCCC;
                 if (!splitDesc.isEmpty()) {
-                    graphics.text(font, splitDesc.get(0), x + 21, y + 12, descColor, true);
+                    graphics.drawString(font, splitDesc.get(0), x + 21, y + 12, descColor, true);
                     if (splitDesc.size() >= 2) {
-                        graphics.text(font, splitDesc.get(1), x + 21, y + 21, descColor, true);
+                        graphics.drawString(font, splitDesc.get(1), x + 21, y + 21, descColor, true);
                     }
                 } else {
                     Component statusText = done
                         ? Component.translatable("advancement_progress.hud.done")
                         : Component.translatable("advancement_progress.hud.in_progress");
-                    graphics.text(font, statusText, x + 21, y + 12, descColor, true);
+                    graphics.drawString(font, statusText, x + 21, y + 12, descColor, true);
                 }
             }
 

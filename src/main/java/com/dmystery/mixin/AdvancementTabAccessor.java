@@ -13,9 +13,6 @@ public interface AdvancementTabAccessor {
     @Accessor("widgets")
     Map<AdvancementHolder, AdvancementWidget> advancementProgress$getWidgets();
 
-    @Accessor("hovered")
-    AdvancementWidget advancementProgress$getHovered();
-
     @Accessor("scrollX")
     double advancementProgress$getScrollX();
 

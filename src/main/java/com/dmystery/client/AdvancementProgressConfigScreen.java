@@ -2,7 +2,7 @@ package com.dmystery.client;
 
 import com.dmystery.mixin.AdvancementsScreenAccessor;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -64,15 +64,17 @@ public class AdvancementProgressConfigScreen extends Screen {
                 .create(leftX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancement_progress.config.hud_enabled"), (btn, val) -> config.hudEnabled = val)
         );
         addRenderableWidget(
-            CycleButton.builder(AdvancementProgressConfig.HudPosition::getDisplayName, config.hudPosition)
+            CycleButton.builder(AdvancementProgressConfig.HudPosition::getDisplayName)
                 .withValues(AdvancementProgressConfig.HudPosition.values())
+                .withInitialValue(config.hudPosition)
                 .create(rightX, startY + rowSpacing * 2, colW, 20, Component.translatable("advancement_progress.config.hud_position"), (btn, val) -> config.hudPosition = val)
         );
 
         // Row 4: Max Pins | Tree Zoom
         addRenderableWidget(
-            CycleButton.builder(v -> Component.literal(String.valueOf(v)), config.maxPins)
+            CycleButton.builder((Integer v) -> Component.literal(String.valueOf(v)))
                 .withValues(1, 2, 3, 4, 5)
+                .withInitialValue(config.maxPins)
                 .create(leftX, startY + rowSpacing * 3, colW, 20, Component.translatable("advancement_progress.config.max_pins"), (btn, val) -> config.maxPins = val)
         );
         addRenderableWidget(
@@ -109,9 +111,9 @@ public class AdvancementProgressConfigScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        graphics.centeredText(this.font, this.title, this.width / 2, 16, 0xFFFFFFFF);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 16, 0xFFFFFFFF);
     }
 
     @Override
@@ -134,11 +136,11 @@ public class AdvancementProgressConfigScreen extends Screen {
                     if (currentTabHolder != null) {
                         adv.setSelectedTab(currentTabHolder, true);
                     }
-                    this.minecraft.setScreenAndShow(freshScreen);
+                    this.minecraft.setScreen(freshScreen);
                     return;
                 }
             }
-            this.minecraft.setScreenAndShow(this.parent);
+            this.minecraft.setScreen(this.parent);
         }
     }
 }

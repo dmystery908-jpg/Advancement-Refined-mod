@@ -17,7 +17,4 @@ public interface AdvancementWidgetAccessor {
 
     @Accessor("display")
     DisplayInfo advancementProgress$getDisplay();
-
-    @Accessor("icon")
-    net.minecraft.world.item.ItemStack advancementProgress$getIcon();
 }

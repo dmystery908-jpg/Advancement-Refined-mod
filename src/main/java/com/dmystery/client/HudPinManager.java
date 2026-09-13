@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.io.Reader;
 import java.io.Writer;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class HudPinManager {
     public static final int MAX_PINNED = 3;
-    private static final Map<String, List<Identifier>> WORLD_PINS = new HashMap<>();
+    private static final Map<String, List<ResourceLocation>> WORLD_PINS = new HashMap<>();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("advancement_progress_pins.json");
     private static boolean loaded = false;
@@ -40,7 +40,7 @@ public class HudPinManager {
             return "server_" + mc.getCurrentServer().ip.replace(':', '_');
         }
         if (mc.level != null) {
-            return "world_" + mc.level.dimension().identifier().toString().replace(':', '_');
+            return "world_" + mc.level.dimension().location().toString().replace(':', '_');
         }
         return "default";
     }
@@ -51,21 +51,21 @@ public class HudPinManager {
         load();
     }
 
-    public static synchronized List<Identifier> getPinned() {
+    public static synchronized List<ResourceLocation> getPinned() {
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.get(key);
+        List<ResourceLocation> list = WORLD_PINS.get(key);
         if (list == null) {
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(new ArrayList<>(list));
     }
 
-    public static synchronized boolean isPinned(Identifier id) {
+    public static synchronized boolean isPinned(ResourceLocation id) {
         if (id == null) return false;
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.get(key);
+        List<ResourceLocation> list = WORLD_PINS.get(key);
         return list != null && list.contains(id);
     }
 
@@ -73,11 +73,11 @@ public class HudPinManager {
         return AdvancementProgressConfig.getInstance().maxPins;
     }
 
-    public static synchronized boolean pin(Identifier id) {
+    public static synchronized boolean pin(ResourceLocation id) {
         if (id == null) return false;
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.computeIfAbsent(key, k -> new ArrayList<>());
+        List<ResourceLocation> list = WORLD_PINS.computeIfAbsent(key, k -> new ArrayList<>());
         if (list.contains(id)) return true;
         if (list.size() >= getMaxPinned()) return false;
         list.add(id);
@@ -85,11 +85,11 @@ public class HudPinManager {
         return true;
     }
 
-    public static synchronized boolean unpin(Identifier id) {
+    public static synchronized boolean unpin(ResourceLocation id) {
         if (id == null) return false;
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.get(key);
+        List<ResourceLocation> list = WORLD_PINS.get(key);
         if (list != null && list.remove(id)) {
             save();
             return true;
@@ -97,7 +97,7 @@ public class HudPinManager {
         return false;
     }
 
-    public static synchronized boolean togglePin(Identifier id) {
+    public static synchronized boolean togglePin(ResourceLocation id) {
         if (isPinned(id)) {
             unpin(id);
             return false;
@@ -109,14 +109,14 @@ public class HudPinManager {
     public static synchronized int getPinnedCount() {
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.get(key);
+        List<ResourceLocation> list = WORLD_PINS.get(key);
         return list != null ? list.size() : 0;
     }
 
     public static synchronized void clearAll() {
         ensureLoaded();
         String key = getCurrentWorldKey();
-        List<Identifier> list = WORLD_PINS.get(key);
+        List<ResourceLocation> list = WORLD_PINS.get(key);
         if (list != null && !list.isEmpty()) {
             list.clear();
             save();
@@ -133,10 +133,10 @@ public class HudPinManager {
                 for (String key : obj.keySet()) {
                     com.google.gson.JsonElement val = obj.get(key);
                     if (val != null && val.isJsonArray()) {
-                        List<Identifier> list = new ArrayList<>();
+                        List<ResourceLocation> list = new ArrayList<>();
                         for (com.google.gson.JsonElement item : val.getAsJsonArray()) {
                             if (item.isJsonPrimitive()) {
-                                Identifier id = Identifier.tryParse(item.getAsString());
+                                ResourceLocation id = ResourceLocation.tryParse(item.getAsString());
                                 if (id != null && !list.contains(id) && list.size() < getMaxPinned()) {
                                     list.add(id);
                                 }
@@ -156,9 +156,9 @@ public class HudPinManager {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
                 Map<String, List<String>> saveMap = new HashMap<>();
-                for (Map.Entry<String, List<Identifier>> entry : WORLD_PINS.entrySet()) {
+                for (Map.Entry<String, List<ResourceLocation>> entry : WORLD_PINS.entrySet()) {
                     List<String> strList = new ArrayList<>();
-                    for (Identifier id : entry.getValue()) {
+                    for (ResourceLocation id : entry.getValue()) {
                         strList.add(id.toString());
                     }
                     saveMap.put(entry.getKey(), strList);

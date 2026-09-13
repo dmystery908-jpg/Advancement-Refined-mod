@@ -10,7 +10,7 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
@@ -76,7 +76,7 @@ public class AdvancementDataLoader {
                 PackType.SERVER_DATA,
                 List.of(minecraft.getVanillaPackResources())
         )) {
-            Map<Identifier, Advancement> rawAdvancements = new HashMap<>();
+            Map<ResourceLocation, Advancement> rawAdvancements = new HashMap<>();
             SimpleJsonResourceReloadListener.scanDirectory(
                     resourceManager,
                     FileToIdConverter.registry(Registries.ADVANCEMENT),
@@ -86,7 +86,7 @@ public class AdvancementDataLoader {
             );
 
             List<AdvancementHolder> holders = new ArrayList<>();
-            for (Map.Entry<Identifier, Advancement> entry : rawAdvancements.entrySet()) {
+            for (Map.Entry<ResourceLocation, Advancement> entry : rawAdvancements.entrySet()) {
                 if (entry.getValue().display().isPresent()) {
                     holders.add(new AdvancementHolder(entry.getKey(), entry.getValue()));
                 }
