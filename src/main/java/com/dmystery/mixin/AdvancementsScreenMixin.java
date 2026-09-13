@@ -248,32 +248,31 @@ public abstract class AdvancementsScreenMixin extends Screen {
 
     @Unique
     private void advancementProgress$renderGearIcon(GuiGraphics graphics, int x, int y, int color) {
-        // Crisp 10x10 mechanical gear icon
-        // Row 0: cols 3..6
-        graphics.fill(x + 3, y + 0, x + 7, y + 1, color);
-        // Row 1: cols 2..7
-        graphics.fill(x + 2, y + 1, x + 8, y + 2, color);
-        // Row 2: cols 1..2, 4..5, 7..8
-        graphics.fill(x + 1, y + 2, x + 3, y + 3, color);
-        graphics.fill(x + 4, y + 2, x + 6, y + 3, color);
-        graphics.fill(x + 7, y + 2, x + 9, y + 3, color);
-        // Row 3: cols 0..3, 6..9
-        graphics.fill(x + 0, y + 3, x + 4, y + 4, color);
-        graphics.fill(x + 6, y + 3, x + 10, y + 4, color);
-        // Rows 4 & 5: cols 0..2, 7..9 (center hole 3..6)
-        graphics.fill(x + 0, y + 4, x + 3, y + 6, color);
-        graphics.fill(x + 7, y + 4, x + 10, y + 6, color);
-        // Row 6: cols 0..3, 6..9
-        graphics.fill(x + 0, y + 6, x + 4, y + 7, color);
-        graphics.fill(x + 6, y + 6, x + 10, y + 7, color);
-        // Row 7: cols 1..2, 4..5, 7..8
-        graphics.fill(x + 1, y + 7, x + 3, y + 8, color);
-        graphics.fill(x + 4, y + 7, x + 6, y + 8, color);
-        graphics.fill(x + 7, y + 7, x + 9, y + 8, color);
-        // Row 8: cols 2..7
-        graphics.fill(x + 2, y + 8, x + 8, y + 9, color);
-        // Row 9: cols 3..6
-        graphics.fill(x + 3, y + 9, x + 7, y + 10, color);
+        // Crisp 11x11 mechanical gear icon with 8 distinct protruding teeth and central hole
+        // Row 0: Top tooth (cols 4..6)
+        graphics.fill(x + 4, y + 0, x + 7, y + 1, color);
+        // Row 1: Corner teeth tips (cols 1..2, 8..9) & top tooth base (cols 4..6)
+        graphics.fill(x + 1, y + 1, x + 3, y + 2, color);
+        graphics.fill(x + 4, y + 1, x + 7, y + 2, color);
+        graphics.fill(x + 8, y + 1, x + 10, y + 2, color);
+        // Row 2: Ring upper rim (cols 1..9)
+        graphics.fill(x + 1, y + 2, x + 10, y + 3, color);
+        // Row 3: Ring upper shoulder (cols 2..8)
+        graphics.fill(x + 2, y + 3, x + 9, y + 4, color);
+        // Rows 4..6: Left tooth + ring body (cols 0..3) and ring body + right tooth (cols 7..10)
+        // Center hole at cols 4..6 (3x3 square hole)
+        graphics.fill(x + 0, y + 4, x + 4, y + 7, color);
+        graphics.fill(x + 7, y + 4, x + 11, y + 7, color);
+        // Row 7: Ring lower shoulder (cols 2..8)
+        graphics.fill(x + 2, y + 7, x + 9, y + 8, color);
+        // Row 8: Ring lower rim (cols 1..9)
+        graphics.fill(x + 1, y + 8, x + 10, y + 9, color);
+        // Row 9: Corner teeth tips (cols 1..2, 8..9) & bottom tooth base (cols 4..6)
+        graphics.fill(x + 1, y + 9, x + 3, y + 10, color);
+        graphics.fill(x + 4, y + 9, x + 7, y + 10, color);
+        graphics.fill(x + 8, y + 9, x + 10, y + 10, color);
+        // Row 10: Bottom tooth (cols 4..6)
+        graphics.fill(x + 4, y + 10, x + 7, y + 11, color);
     }
 
     @Inject(method = "renderInside", at = @At("HEAD"), cancellable = true)
@@ -682,7 +681,12 @@ public abstract class AdvancementsScreenMixin extends Screen {
             ItemStack icon = display != null ? display.getIcon() : new ItemStack(Items.BOOK);
             PinnedChip chip = new PinnedChip(id, holder, title, icon);
 
-            String shortTitle = this.font.plainSubstrByWidth(title.getString(), 60);
+            String rawTitle = title.getString();
+            String shortTitle = this.font.plainSubstrByWidth(rawTitle, 110);
+            if (!shortTitle.equals(rawTitle)) {
+                shortTitle = this.font.plainSubstrByWidth(rawTitle, 102) + "…";
+            }
+            chip.displayTitle = shortTitle;
             int textW = this.font.width(shortTitle);
             chip.w = 16 + textW + 12;
             chip.h = barHeight;
@@ -777,8 +781,7 @@ public abstract class AdvancementsScreenMixin extends Screen {
             graphics.pose().popPose();
 
             // Title
-            String shortTitle = this.font.plainSubstrByWidth(chip.title.getString(), 60);
-            graphics.drawString(this.font, Component.literal(shortTitle), chip.x + 15, chip.y + 3, 0xFFFFAA00, false);
+            graphics.drawString(this.font, Component.literal(chip.displayTitle != null ? chip.displayTitle : chip.title.getString()), chip.x + 15, chip.y + 3, 0xFFFFAA00, false);
 
             // Close button [✕]
             if (closeHovered) {
@@ -824,8 +827,8 @@ public abstract class AdvancementsScreenMixin extends Screen {
         graphics.fill(advancementProgress$gearX, advancementProgress$gearY, advancementProgress$gearX + advancementProgress$gearW, advancementProgress$gearY + advancementProgress$gearH, gearBg);
         graphics.renderOutline(advancementProgress$gearX, advancementProgress$gearY, advancementProgress$gearW, advancementProgress$gearH, gearBorder);
 
-        int iconX = advancementProgress$gearX + (advancementProgress$gearW - 10) / 2;
-        int iconY = advancementProgress$gearY + (advancementProgress$gearH - 10) / 2;
+        int iconX = advancementProgress$gearX + (advancementProgress$gearW - 11) / 2;
+        int iconY = advancementProgress$gearY + (advancementProgress$gearH - 11) / 2;
         // Drop shadow (1px offset)
         advancementProgress$renderGearIcon(graphics, iconX + 1, iconY + 1, 0x60000000);
         // Main gear icon (gold on hover, metallic silver normally)

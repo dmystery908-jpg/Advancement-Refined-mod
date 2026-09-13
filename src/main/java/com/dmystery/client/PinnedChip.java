@@ -8,7 +8,8 @@ import net.minecraft.world.item.ItemStack;
 public class PinnedChip {
     public final ResourceLocation id;
     public final AdvancementHolder holder;
-    public final Component title;
+    public Component title;
+    public String displayTitle;
     public final ItemStack icon;
     public int x;
     public int y;
@@ -23,6 +24,7 @@ public class PinnedChip {
         this.id = id;
         this.holder = holder;
         this.title = title;
+        this.displayTitle = title.getString();
         this.icon = icon;
     }
 }
