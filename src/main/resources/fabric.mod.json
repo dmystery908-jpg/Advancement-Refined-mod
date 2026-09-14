@@ -3,13 +3,14 @@
 	"id": "advancements-refined",
 	"version": "${version}",
 	"name": "Advancements Refined",
-	"description": "Client-side advancement progress tracking mod for Minecraft.",
+	"description": "Client-side UI and quality-of-life overhaul for advancements: fullscreen tree with zoom, interactive criteria inspector, HUD tracking, and progress bars.",
 	"authors": [
 		"dmystery"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	"homepage": "https://github.com/dmystery908-jpg/Advancement-Refined-mod",
+	"sources": "https://github.com/dmystery908-jpg/Advancement-Refined-mod",
+	"issues": "https://github.com/dmystery908-jpg/Advancement-Refined-mod/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/advancements-refined/icon.png",
