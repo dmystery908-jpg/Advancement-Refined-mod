@@ -2,6 +2,7 @@ package com.dmystery.client;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
@@ -9,6 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.SpawnEggItem;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,14 +22,42 @@ public class CriterionResolver {
     private static final Map<String, CriterionDisplay> CACHE = new HashMap<>();
 
     public static CriterionDisplay resolve(String rawName) {
-        return CACHE.computeIfAbsent(rawName, CriterionResolver::computeDisplay);
+        return resolve(null, rawName);
     }
 
-    private static CriterionDisplay computeDisplay(String raw) {
+    public static CriterionDisplay resolve(@Nullable ResourceLocation advId, String rawName) {
+        String cacheKey = (advId != null ? advId.toString() : "") + "#" + rawName;
+        return CACHE.computeIfAbsent(cacheKey, k -> computeDisplay(advId, rawName));
+    }
+
+    private static boolean isEntityContext(@Nullable ResourceLocation advId) {
+        if (advId == null) return false;
+        String path = advId.getPath();
+        return path.contains("bred_all_animals") || path.contains("breed")
+            || path.contains("kill_all_mobs") || path.contains("kill_a_mob")
+            || path.contains("monsters_hunted") || path.contains("mob")
+            || path.contains("animal") || path.contains("entity");
+    }
+
+    private static CriterionDisplay computeDisplay(@Nullable ResourceLocation advId, String raw) {
         String cleanName = raw.trim();
         ResourceLocation id = ResourceLocation.tryParse(cleanName.contains(":") ? cleanName : "minecraft:" + cleanName);
 
         if (id != null) {
+            boolean preferEntity = isEntityContext(advId);
+
+            if (preferEntity) {
+                // Check EntityType first for entity-focused advancements (e.g. bred_all_animals, kill_all_mobs)
+                Optional<Holder.Reference<EntityType<?>>> entityHolder = BuiltInRegistries.ENTITY_TYPE.get(id);
+                if (entityHolder.isPresent()) {
+                    EntityType<?> entityType = entityHolder.get().value();
+                    Component entityName = entityType.getDescription();
+                    SpawnEggItem egg = SpawnEggItem.byId(entityType);
+                    ItemStack icon = egg != null ? new ItemStack(egg) : new ItemStack(Items.ZOMBIE_HEAD);
+                    return new CriterionDisplay(icon, entityName);
+                }
+            }
+
             // 1. Check if it matches an Item
             Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(id);
             if (itemHolder.isPresent() && itemHolder.get().value() != Items.AIR) {
@@ -35,22 +65,25 @@ public class CriterionResolver {
                 return new CriterionDisplay(stack, stack.getHoverName());
             }
 
-            // 2. Check if it matches an EntityType
-            Optional<Holder.Reference<EntityType<?>>> entityHolder = BuiltInRegistries.ENTITY_TYPE.get(id);
-            if (entityHolder.isPresent()) {
-                EntityType<?> entityType = entityHolder.get().value();
-                Component entityName = entityType.getDescription();
-                SpawnEggItem egg = SpawnEggItem.byId(entityType);
-                ItemStack icon = egg != null ? new ItemStack(egg) : new ItemStack(Items.ZOMBIE_HEAD);
-                return new CriterionDisplay(icon, entityName);
+            // 2. Check if it matches an EntityType (if not already checked)
+            if (!preferEntity) {
+                Optional<Holder.Reference<EntityType<?>>> entityHolder = BuiltInRegistries.ENTITY_TYPE.get(id);
+                if (entityHolder.isPresent()) {
+                    EntityType<?> entityType = entityHolder.get().value();
+                    Component entityName = entityType.getDescription();
+                    SpawnEggItem egg = SpawnEggItem.byId(entityType);
+                    ItemStack icon = egg != null ? new ItemStack(egg) : new ItemStack(Items.ZOMBIE_HEAD);
+                    return new CriterionDisplay(icon, entityName);
+                }
             }
 
             // 3. Check for biome (e.g. adventuring time)
             if (cleanName.startsWith("minecraft:") || !cleanName.contains("/")) {
                 String biomeKey = "biome." + id.getNamespace() + "." + id.getPath();
-                Component biomeComp = Component.translatable(biomeKey);
-                // If translation exists (doesn't just echo key) or default
-                return new CriterionDisplay(new ItemStack(Items.COMPASS), biomeComp);
+                if (Language.getInstance().has(biomeKey)) {
+                    Component biomeComp = Component.translatable(biomeKey);
+                    return new CriterionDisplay(new ItemStack(Items.COMPASS), biomeComp);
+                }
             }
         }
 

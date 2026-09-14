@@ -117,7 +117,7 @@ public class InspectorPanel {
         for (String critName : adv.requirements().names()) {
             boolean done = progress != null && progress.getCriterion(critName) != null && progress.getCriterion(critName).isDone();
 
-            CriterionResolver.CriterionDisplay display = CriterionResolver.resolve(critName);
+            CriterionResolver.CriterionDisplay display = CriterionResolver.resolve(node.holder().id(), critName);
             CriterionItem item = new CriterionItem(critName, done, display.icon(), display.name());
             allEntries.add(item);
         }
