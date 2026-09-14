@@ -511,6 +511,8 @@ public abstract class AdvancementsScreenMixin extends Screen {
 
                 // If not clicking another composite node, close inspector panel!
                 advancementProgress$inspector.close();
+                cir.setReturnValue(true);
+                return;
             }
         } else {
             // Inspector was closed: open if left-clicked on composite advancement
@@ -538,6 +540,7 @@ public abstract class AdvancementsScreenMixin extends Screen {
                 if (tab.isMouseOver(this.leftPos, this.topPos, event.x(), event.y())) {
                     this.selectedTab = tab;
                     this.advancements.setSelectedTab(tab.getRootNode().holder(), true);
+                    advancementProgress$inspector.close();
                     net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
                         SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)
                     );
@@ -546,6 +549,10 @@ public abstract class AdvancementsScreenMixin extends Screen {
                 }
             }
         }
+
+        // 5. Cancel vanilla AdvancementsScreen.mouseClicked to prevent vanilla's hardcoded (252x140) tab hitboxes
+        // from triggering ghost tab switches in the middle of our enlarged screen.
+        cir.setReturnValue(super.mouseClicked(event, flag));
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
